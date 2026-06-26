@@ -44,6 +44,41 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// ── Criação automática das tabelas ───────────────────────────
+async function initDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT single_row CHECK (id = 1)
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'consulta' CHECK (role IN ('admin', 'editor', 'consulta')),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT,
+      user_name TEXT,
+      acao TEXT,
+      modulo TEXT,
+      nome TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  console.log("Tabelas verificadas/criadas.");
+}
+
 // ── Seed de usuários iniciais ────────────────────────────────
 async function seedUsersIfEmpty() {
   const { rows } = await pool.query("SELECT COUNT(*) AS n FROM users");
@@ -217,6 +252,8 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`API rodando na porta ${PORT}`);
-  try { await seedUsersIfEmpty(); }
-  catch (e) { console.error("Erro no seed:", e.message); }
+  try {
+    await initDatabase();
+    await seedUsersIfEmpty();
+  } catch (e) { console.error("Erro na inicialização:", e.message); }
 });
