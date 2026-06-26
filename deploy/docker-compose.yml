@@ -1,0 +1,45 @@
+# ============================================================
+# Gestão do Turismo de Itatinga — Docker Compose
+# Deploy: Easypanel em inventario.turismoitatinga.com.br
+# ============================================================
+version: "3.9"
+
+services:
+
+  # ── Banco de dados ────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       turismo
+      POSTGRES_USER:     turismo
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turismo -d turismo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── API Node.js ───────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo
+      SESSION_SECRET: ${SESSION_SECRET}
+      PORT:           3000
+    volumes:
+      - ./web:/app/web:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
