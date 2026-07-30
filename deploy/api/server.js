@@ -12,6 +12,15 @@ const PgSession  = require("connect-pg-simple")(session);
 const path       = require("path");
 
 const app  = express();
+const isProduction = process.env.NODE_ENV === "production";
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (isProduction && !sessionSecret) {
+  throw new Error("SESSION_SECRET é obrigatório em produção.");
+}
+
+app.set("trust proxy", 1);
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: false });
 
 // ── Middlewares ──────────────────────────────────────────────
@@ -19,10 +28,10 @@ app.use(express.json({ limit: "50mb" }));
 
 app.use(session({
   store: new PgSession({ pool, tableName: "sessions", createTableIfMissing: true }),
-  secret: process.env.SESSION_SECRET || "fallback-dev-secret-mude-em-producao",
+  secret: sessionSecret || "fallback-dev-secret-mude-em-desenvolvimento",
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: "lax", maxAge: 8 * 60 * 60 * 1000 }
+  cookie: { httpOnly: true, sameSite: "lax", secure: isProduction, maxAge: 8 * 60 * 60 * 1000 }
 }));
 
 // Serve os arquivos estáticos do frontend
@@ -84,9 +93,7 @@ async function seedUsersIfEmpty() {
   const { rows } = await pool.query("SELECT COUNT(*) AS n FROM users");
   if (parseInt(rows[0].n) > 0) return;
   const defaults = [
-    { email: "admin@turismoitatinga.com.br",    name: "Administrador", role: "admin",    senha: "Itatinga@2026"   },
-    { email: "editor@turismoitatinga.com.br",   name: "Editor",        role: "editor",   senha: "Inventario@2026" },
-    { email: "consulta@turismoitatinga.com.br", name: "Consulta",      role: "consulta", senha: "Consulta@2026"   },
+    { email: "Rochel", name: "Rochel", role: "admin", senha: "Rochel" },
   ];
   for (const u of defaults) {
     const hash = await bcrypt.hash(u.senha, 12);
@@ -102,7 +109,7 @@ async function seedUsersIfEmpty() {
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
-    if (!email || !senha) return res.status(400).json({ error: "E-mail e senha obrigatórios" });
+    if (!email || !senha) return res.status(400).json({ error: "Login e senha obrigatórios" });
     const { rows } = await pool.query(
       "SELECT * FROM users WHERE lower(email)=lower($1) AND active=true", [email]
     );
@@ -178,7 +185,7 @@ app.post("/api/users", requireAuth, requireAdmin, async (req, res) => {
     );
     res.json({ user: rows[0] });
   } catch (e) {
-    if (e.code === "23505") return res.status(400).json({ error: "E-mail já cadastrado" });
+    if (e.code === "23505") return res.status(400).json({ error: "Login já cadastrado" });
     res.status(500).json({ error: "Erro ao criar usuário" });
   }
 });

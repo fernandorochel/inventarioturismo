@@ -61,13 +61,11 @@ inventario.turismoitatinga.com.br  CNAME  seu-servidor.easypanel.host
 1. Abra `https://inventario.turismoitatinga.com.br`
 2. Faça login com as credenciais iniciais:
 
-| Perfil | E-mail | Senha |
+| Perfil | Login | Senha |
 |--------|--------|-------|
-| Admin | `admin@turismoitatinga.com.br` | `Itatinga@2026` |
-| Editor | `editor@turismoitatinga.com.br` | `Inventario@2026` |
-| Consulta | `consulta@turismoitatinga.com.br` | `Consulta@2026` |
+| Admin | `Rochel` | `Rochel` |
 
-3. **Troque as senhas imediatamente** em Administração → Usuários.
+3. Em Administração → Usuários, cadastre os demais usuários conforme necessário.
 
 ### 6. Migrar dados do sistema atual (opcional)
 

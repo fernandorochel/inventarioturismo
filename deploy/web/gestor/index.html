@@ -207,7 +207,7 @@
     <div class="logos"><img id="loginLogoP" alt="Prefeitura"><img id="loginLogoT" alt="Turismo"></div>
     <h1>Gestão do Turismo de Itatinga</h1>
     <p class="sub">Diretoria de Lazer, Turismo e Eventos</p>
-    <div class="field"><label>E-mail</label><input id="email" type="email" placeholder="seu@email.gov.br"></div>
+    <div class="field"><label>Login</label><input id="email" type="text" placeholder="Seu login"></div>
     <div class="field"><label>Senha</label><input id="senha" type="password" placeholder="••••••••"></div>
     <button class="btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="loginErr"></div>
@@ -238,11 +238,6 @@ const LOGO_PREF="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcoAAACgCAIAAAAD5
 ["loginLogoP","topLogoP"].forEach(id=>document.getElementById(id).src=LOGO_PREF);
 ["loginLogoT","topLogoT"].forEach(id=>document.getElementById(id).src=LOGO_TUR);
 
-const USERS_DEFAULT=[
-  {email:"admin@turismoitatinga.com.br",senha:"Itatinga@2026",nome:"Administrador",role:"admin"},
-  {email:"editor@turismoitatinga.com.br",senha:"Inventario@2026",nome:"Editor",role:"editor"},
-  {email:"consulta@turismoitatinga.com.br",senha:"Consulta@2026",nome:"Consulta",role:"consulta"},
-];
 // Usuários: gerenciados pela API
 let USERS=[];
 async function loadUsers(){try{const r=await fetch("/api/users");if(r.ok)USERS=(await r.json()).users||[];}catch(e){}}
@@ -1325,7 +1320,7 @@ async function renderUsers(){
   let h=`<div class="crumb">Sistema › Administração › Usuários</div>
   <div class="page-head"><div><h2>👥 Gerenciamento de Usuários</h2><p>Controle de acesso por perfil</p></div>
     <button class="btn btn-sm" onclick="newUser()">+ Novo usuário</button></div>
-  <div class="tablewrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
+  <div class="tablewrap"><table><thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
   <tbody>${rows}</tbody></table></div>`;
   document.getElementById("main").innerHTML=h;
 }
@@ -1337,7 +1332,7 @@ function _userModal(idx,u){
   modal(idx<0?"Novo Usuário":"Editar Usuário",
   `<div style="display:grid;gap:10px">
     <label>Nome<input id="u_nome" class="inp" value="${_esc(u.nome)}" placeholder="Nome completo"></label>
-    <label>E-mail<input id="u_email" class="inp" value="${_esc(u.email)}" placeholder="email@exemplo.com" ${idx>=0?"readonly":""}></label>
+    <label>Login<input id="u_email" class="inp" value="${_esc(u.email)}" placeholder="Login de acesso" ${idx>=0?"readonly":""}></label>
     <label>Senha<input id="u_senha" class="inp" type="text" value="${_esc(u.senha)}" placeholder="Senha de acesso"></label>
     <label>Perfil<select id="u_role" class="inp">
       <option value="admin" ${u.role==="admin"?"selected":""}>Administrador</option>
@@ -1353,7 +1348,7 @@ async function _saveUser(idx){
   const email=document.getElementById("u_email").value.trim().toLowerCase();
   const senha=document.getElementById("u_senha").value.trim();
   const role=document.getElementById("u_role").value;
-  if(!nome||!email){toast("Preencha nome e e-mail.");return;}
+  if(!nome||!email){toast("Preencha nome e login.");return;}
   if(idx<0&&!senha){toast("Informe a senha.");return;}
   try{
     let res;

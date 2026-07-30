@@ -32,6 +32,7 @@ services:
     environment:
       DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo
       SESSION_SECRET: ${SESSION_SECRET}
+      NODE_ENV:       production
       PORT:           3000
     volumes:
       - ./web:/app/web:ro
