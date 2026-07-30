@@ -2,7 +2,6 @@
 # Gestão do Turismo de Itatinga — Docker Compose
 # Deploy: Easypanel em inventario.turismoitatinga.com.br
 # ============================================================
-version: "3.9"
 
 services:
 
@@ -46,7 +45,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-3002}:3000"
 
 volumes:
   postgres_data:
