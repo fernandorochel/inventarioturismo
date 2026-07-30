@@ -1368,11 +1368,12 @@ function resetUsers(){toast("Gerencie usuários pela interface acima.");}
 function newUser(){_userModal(-1,{nome:"",email:"",senha:"",role:"editor"});}
 function editUser(i){_userModal(i,{...USERS[i]});}
 function _userModal(idx,u){
+  const nome=u.nome||u.name||"";
   modal(idx<0?"Novo Usuário":"Editar Usuário",
   `<div style="display:grid;gap:10px">
-    <label>Nome<input id="u_nome" class="inp" value="${_esc(u.nome)}" placeholder="Nome completo"></label>
+    <label>Nome<input id="u_nome" class="inp" value="${_esc(nome)}" placeholder="Nome completo"></label>
     <label>Login<input id="u_email" class="inp" value="${_esc(u.email)}" placeholder="Login de acesso" ${idx>=0?"readonly":""}></label>
-    <label>Senha<input id="u_senha" class="inp" type="text" value="${_esc(u.senha)}" placeholder="Senha de acesso"></label>
+    <label>Senha<input id="u_senha" class="inp" type="text" value="" placeholder="${idx<0?"Senha de acesso":"Deixe em branco para manter"}"></label>
     <label>Perfil<select id="u_role" class="inp">
       <option value="admin" ${u.role==="admin"?"selected":""}>Administrador</option>
       <option value="editor" ${u.role==="editor"?"selected":""}>Editor</option>
@@ -1389,20 +1390,20 @@ async function _saveUser(idx){
   const role=document.getElementById("u_role").value;
   if(!nome||!email){toast("Preencha nome e login.");return;}
   if(idx<0&&!senha){toast("Informe a senha.");return;}
+  if(senha&&senha.length<6){toast("A senha deve ter no mínimo 6 caracteres.");return;}
   try{
     let res;
     if(idx<0){
       res=await fetch("/api/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,nome,role,senha})});
-      logAudit("Criação de usuário","Usuários",nome);
     } else {
       const uid=USERS[idx].id;
       res=await fetch("/api/users/"+uid,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({nome,role,active:true,senha})});
-      logAudit("Edição de usuário","Usuários",nome);
     }
     const json=await res.json();
     if(!res.ok){toast(json.error||"Erro ao salvar usuário");return;}
+    logAudit(idx<0?"Criação de usuário":"Edição de usuário","Usuários",nome);
   }catch(e){toast("Erro de conexão");return;}
-  closeModal();renderUsers();toast(idx<0?"Usuário criado":"Usuário atualizado");
+  closeModal();await renderUsers();toast(idx<0?"Usuário criado":"Usuário atualizado");
 }
 async function delUser(i){
   const u=USERS[i];
@@ -1414,7 +1415,7 @@ async function delUser(i){
     if(!res.ok){toast(json.error||"Erro ao excluir");return;}
     logAudit("Exclusão de usuário","Usuários",nome);
   }catch(e){toast("Erro de conexão");return;}
-  renderUsers();toast("Usuário excluído");
+  await renderUsers();toast("Usuário excluído");
 }
 
 
