@@ -15,6 +15,7 @@ const crypto     = require("crypto");
 const app  = express();
 const isProduction = process.env.NODE_ENV === "production";
 const sessionSecret = process.env.SESSION_SECRET;
+const secureCookies = process.env.COOKIE_SECURE === "true";
 
 if (isProduction && !sessionSecret) {
   throw new Error("SESSION_SECRET é obrigatório em produção.");
@@ -32,7 +33,7 @@ app.use(session({
   secret: sessionSecret || "fallback-dev-secret-mude-em-desenvolvimento",
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: "lax", secure: isProduction, maxAge: 8 * 60 * 60 * 1000 }
+  cookie: { httpOnly: true, sameSite: "lax", secure: secureCookies, maxAge: 8 * 60 * 60 * 1000 }
 }));
 
 // Serve os arquivos estáticos do frontend

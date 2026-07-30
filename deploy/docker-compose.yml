@@ -33,6 +33,7 @@ services:
       DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo
       SESSION_SECRET: ${SESSION_SECRET}
       NODE_ENV:       production
+      COOKIE_SECURE:  ${COOKIE_SECURE:-false}
       PORT:           3000
       GOOGLE_DRIVE_UPLOAD_FOLDER_ID: ${GOOGLE_DRIVE_UPLOAD_FOLDER_ID:-}
       GOOGLE_OAUTH_CLIENT_ID:        ${GOOGLE_OAUTH_CLIENT_ID:-}
