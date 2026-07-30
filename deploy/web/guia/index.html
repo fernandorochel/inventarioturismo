@@ -105,6 +105,7 @@ footer.site{background:var(--azul-escuro);color:rgba(255,255,255,.85);margin-top
 .fab-sys:hover{opacity:1}
 .thumb{margin:2px 0 10px}
 .thumb img{width:100%;height:158px;object-fit:cover;border-radius:12px;border:1px solid var(--cinza-borda);display:block;background:var(--cinza-fundo)}
+.file-link{display:inline-flex;align-items:center;gap:8px;margin:2px 0 10px;color:var(--azul-principal);font-weight:700;font-size:13px;border:1px solid var(--cinza-borda);border-radius:10px;padding:9px 12px;background:#fff}
 .aviso-cat{grid-column:1/-1;background:#FFF7E6;border:1px solid #F6D58A;border-left:4px solid var(--laranja);border-radius:14px;padding:12px 16px;font-size:13px;color:#7a5800;line-height:1.45}
 .aviso-cat b{color:#9a4a00}
 .btn-mapa{position:relative;display:inline-flex;align-items:center;gap:9px;margin-top:22px;background:var(--amarelo);color:var(--azul-escuro);font-family:'Poppins',sans-serif;font-weight:700;font-size:15px;border-radius:999px;padding:13px 26px;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s}
@@ -216,6 +217,13 @@ function fieldRow(icon,val,href){
   return `<div class="row"><span class="ri">${icon}</span><span>${v}</span></div>`;
 }
 function telHref(t){const d=(t||"").replace(/[^0-9]/g,"");return d?("tel:+55"+d):null;}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||/drive\.google\.com\/uc\?/i.test(src||"");}
+function mediaBlock(r,nome){
+  if(!r.foto)return"";
+  if(isFotoImg(r.foto,r.foto_mime))return `<div class="thumb"><img src="${r.foto}" alt="Foto de ${esc(nome)}" loading="lazy"></div>`;
+  return `<a class="file-link" href="${r.foto_view_url||r.foto}" target="_blank" rel="noopener">📎 ${esc(r.foto_nome||"Abrir arquivo")}</a>`;
+}
 function rodoviariaCard(){
   const mu=(DATA._municipio||{});
   let info=null;
@@ -277,7 +285,7 @@ function openCat(key){
       const insta=r.instagram;
       return `<div class="item">
         <h3>${nome}</h3>
-        ${r.foto?`<div class="thumb"><img src="${r.foto}" alt="Foto de ${nome}" loading="lazy"></div>`:""}
+        ${mediaBlock(r,nome)}
         ${r.categoria?`<span class="tag" style="background:${color}">${r.categoria}</span>`:""}
         ${fieldRow("📍",r.endereco)}
         ${fieldRow("📞",r.telefone,telHref(r.telefone))}

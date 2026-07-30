@@ -10,6 +10,7 @@ const bcrypt     = require("bcryptjs");
 const session    = require("express-session");
 const PgSession  = require("connect-pg-simple")(session);
 const path       = require("path");
+const crypto     = require("crypto");
 
 const app  = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -51,6 +52,118 @@ function requireAdmin(req, res, next) {
   if (!req.session.user || req.session.user.role !== "admin")
     return res.status(403).json({ error: "Apenas administradores" });
   next();
+}
+
+// ── Google Drive uploads ────────────────────────────────────
+let driveTokenCache = { token: null, exp: 0 };
+
+function parseDataUrl(dataUrl) {
+  const m = /^data:([^;,]+);base64,(.+)$/i.exec(String(dataUrl || ""));
+  if (!m) throw new Error("Arquivo inválido");
+  return { mimeType: m[1], buffer: Buffer.from(m[2], "base64") };
+}
+
+function cleanFileName(name, mimeType) {
+  const fallbackExt = mimeType === "application/pdf" ? ".pdf" : ".jpg";
+  const safe = String(name || ("upload-" + Date.now() + fallbackExt))
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .trim();
+  return safe || ("upload-" + Date.now() + fallbackExt);
+}
+
+async function getDriveAccessToken() {
+  const now = Math.floor(Date.now() / 1000);
+  if (driveTokenCache.token && driveTokenCache.exp - 60 > now) return driveTokenCache.token;
+
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    const err = new Error("Google Drive não configurado no servidor");
+    err.status = 503;
+    throw err;
+  }
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token"
+    })
+  });
+  const tokenJson = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok) {
+    const err = new Error(tokenJson.error_description || tokenJson.error || "Falha ao autenticar no Google Drive");
+    err.status = 502;
+    throw err;
+  }
+  driveTokenCache = { token: tokenJson.access_token, exp: now + Number(tokenJson.expires_in || 3600) };
+  return driveTokenCache.token;
+}
+
+async function uploadToDrive({ fileName, mimeType, buffer }) {
+  const folderId = process.env.GOOGLE_DRIVE_UPLOAD_FOLDER_ID;
+  if (!folderId) {
+    const err = new Error("Pasta do Google Drive não configurada");
+    err.status = 503;
+    throw err;
+  }
+
+  const accessToken = await getDriveAccessToken();
+  const boundary = "gti-" + crypto.randomBytes(12).toString("hex");
+  const metadata = {
+    name: fileName,
+    parents: [folderId]
+  };
+  const body = Buffer.concat([
+    Buffer.from(
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+      JSON.stringify(metadata) +
+      `\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`
+    ),
+    buffer,
+    Buffer.from(`\r\n--${boundary}--`)
+  ]);
+
+  const uploadRes = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": `multipart/related; boundary=${boundary}`,
+      "Content-Length": String(body.length)
+    },
+    body
+  });
+  const file = await uploadRes.json().catch(() => ({}));
+  if (!uploadRes.ok) {
+    const err = new Error(file.error?.message || "Falha ao enviar arquivo ao Google Drive");
+    err.status = 502;
+    throw err;
+  }
+
+  if (process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true") {
+    await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions?supportsAllDrives=true`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ role: "reader", type: "anyone" })
+    }).catch(() => null);
+  }
+
+  return {
+    id: file.id,
+    name: file.name,
+    viewUrl: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`,
+    directUrl: process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true"
+      ? `https://drive.google.com/uc?export=view&id=${file.id}`
+      : (file.webContentLink || file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`)
+  };
 }
 
 // ── Criação automática das tabelas ───────────────────────────
@@ -146,6 +259,28 @@ app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
     `, [JSON.stringify(data)]);
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro ao salvar dados" }); }
+});
+
+app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
+  try {
+    const { fileName, dataUrl } = req.body;
+    const parsed = parseDataUrl(dataUrl);
+    const allowed = /^image\/(png|jpe?g|webp|gif)$/i.test(parsed.mimeType) || parsed.mimeType === "application/pdf";
+    if (!allowed) return res.status(400).json({ error: "Envie uma imagem ou PDF" });
+    if (parsed.buffer.length > 25 * 1024 * 1024) {
+      return res.status(400).json({ error: "Arquivo muito grande. Limite: 25 MB" });
+    }
+
+    const file = await uploadToDrive({
+      fileName: cleanFileName(fileName, parsed.mimeType),
+      mimeType: parsed.mimeType,
+      buffer: parsed.buffer
+    });
+    res.json({ file: { ...file, mimeType: parsed.mimeType } });
+  } catch (e) {
+    console.error("Erro no upload:", e.message);
+    res.status(e.status || 500).json({ error: e.message || "Erro ao enviar arquivo" });
+  }
 });
 
 // Rota pública: só publicar_guia=Sim e não Inativo

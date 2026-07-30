@@ -34,13 +34,18 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       NODE_ENV:       production
       PORT:           3000
+      GOOGLE_DRIVE_UPLOAD_FOLDER_ID: ${GOOGLE_DRIVE_UPLOAD_FOLDER_ID:-}
+      GOOGLE_OAUTH_CLIENT_ID:        ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET:    ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_REFRESH_TOKEN:    ${GOOGLE_OAUTH_REFRESH_TOKEN:-}
+      GOOGLE_DRIVE_UPLOAD_PUBLIC:    ${GOOGLE_DRIVE_UPLOAD_PUBLIC:-false}
     volumes:
       - ./web:/app/web:ro
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
 
 volumes:
   postgres_data:

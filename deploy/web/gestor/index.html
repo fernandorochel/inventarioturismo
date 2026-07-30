@@ -419,12 +419,46 @@ MODULES.forEach(m=>{
   if(!allFields(m).some(f=>f[0].includes("acess"))) m.sections.push({t:"Acessibilidade",f:[["acessivel","Possui acessibilidade?","sel","simnao"],["acessivel_desc","Descrição do nível de acessibilidade","area"]]});
   if(!allFields(m).some(f=>f[0]==="foto")) m.sections.push({t:"Imagem",f:[["foto","Foto","photo"]]});
 });
-// ---- upload/preview de foto (base64 redimensionado) ----
+// ---- upload/preview de arquivo no Google Drive ----
 window._formFoto="";
+window._formArquivo=null;
 function resizeImg(src,max,q,cb){const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",q));}catch(e){cb(src);}};img.onerror=()=>cb(src);img.src=src;}
-function onFotoPick(e){const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{resizeImg(ev.target.result,1000,0.82,(data)=>{window._formFoto=data;const p=document.getElementById("fotoPrev");if(p)p.innerHTML=fotoImg(data,160,120);});};rd.readAsDataURL(f);}
-function clearFoto(){window._formFoto="";const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Nenhuma foto anexada</div>';}
-function fotoImg(src,mw,mh){return `<img src="${src}" style="max-width:${mw}px;max-height:${mh}px;border-radius:8px;border:1px solid var(--linha);display:block;margin-bottom:8px">`;}
+function fileDataUrl(f){return new Promise((ok,fail)=>{const rd=new FileReader();rd.onload=e=>ok(e.target.result);rd.onerror=fail;rd.readAsDataURL(f);});}
+function resizeImgAsync(src,max,q){return new Promise(ok=>resizeImg(src,max,q,ok));}
+function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||/drive\.google\.com\/uc\?/i.test(src||"");}
+function arquivoLink(src,nome){const n=_esc(nome||"Abrir arquivo");return `<a href="${src}" target="_blank" rel="noopener" class="btn-sec btn-sm" style="display:inline-flex;margin-bottom:8px">📎 ${n}</a>`;}
+function fotoImg(src,mw,mh,nome,mime){if(!src)return"";if(isFotoImg(src,mime))return `<img src="${src}" alt="${_esc(nome||"Arquivo anexado")}" style="max-width:${mw}px;max-height:${mh}px;border-radius:8px;border:1px solid var(--linha);display:block;margin-bottom:8px;object-fit:contain">`;return arquivoLink(src,nome);}
+async function uploadArquivoDrive(file,dataUrl){
+  const res=await fetch("/api/uploads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:file.name,mimeType:file.type,dataUrl})});
+  const json=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(json.error||"Erro ao enviar arquivo");
+  return json.file;
+}
+async function onFotoPick(e){
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Enviando para o Google Drive...</div>';
+  try{
+    const original=await fileDataUrl(f);
+    const data=f.type&&f.type.startsWith("image/")?await resizeImgAsync(original,1200,0.84):original;
+    const up=await uploadArquivoDrive(f,data);
+    window._formFoto=up.directUrl||up.viewUrl;
+    window._formArquivo={id:up.id,nome:up.name||f.name,mime:up.mimeType||f.type,url:window._formFoto,viewUrl:up.viewUrl};
+    if(p)p.innerHTML=fotoImg(window._formFoto,160,120,window._formArquivo.nome,window._formArquivo.mime);
+    toast("Arquivo salvo no Google Drive.");
+  }catch(err){
+    if(f.type&&f.type.startsWith("image/")){
+      const original=await fileDataUrl(f);
+      const data=await resizeImgAsync(original,1000,0.82);
+      window._formFoto=data;window._formArquivo={nome:f.name,mime:f.type,url:data,viewUrl:""};
+      if(p)p.innerHTML=fotoImg(data,160,120,f.name,f.type);
+    }else{
+      window._formFoto="";window._formArquivo=null;
+      if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';
+    }
+    toast((err&&err.message?err.message:"Google Drive não configurado")+".");
+  }
+}
+function clearFoto(){window._formFoto="";window._formArquivo=null;const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';}
 
 
 /* ===== Identificação do Município (registro único) ===== */
@@ -1011,7 +1045,7 @@ function openDetail(key,id){
     body+=`<div class="det-sec">${sec.t}</div>`;
     sec.f.forEach(([fn,fl,t])=>{
       let v=r[fn];
-      if(t==="photo"){v=r.foto?fotoImg(r.foto,240,180):"—";}
+      if(t==="photo"){v=r.foto?fotoImg(r.foto,240,180,r.foto_nome,r.foto_mime):"—";}
       else if(!v){v="—";}
       else if(fn==="maps"){v=`<a href="${r[fn]}" target="_blank" style="word-break:break-all">${r[fn]}</a> <a href="${r[fn]}" target="_blank" style="white-space:nowrap">📍 Abrir no Google Maps ↗</a>`;}
       else if(t==="url"){v=`<a href="${r[fn]}" target="_blank">${r[fn]} ↗</a>`;}
@@ -1027,8 +1061,8 @@ function openDetail(key,id){
 function fieldInput(m,fn,fl,t,optKey,val){
   if(fn==="publicar_guia"&&(val===undefined||val===null||val==="")){val="Sim";}
   const v=val?String(val).replace(/"/g,"&quot;"):"";
-  if(t==="photo"){const cur=val?fotoImg(val,160,120):'<div class="photo-box" id="fotoPrevEmpty">Nenhuma foto anexada</div>';
-    return `<div class="field full"><label>${fl}</label><div id="fotoPrev">${cur}</div><input type="file" accept="image/*" onchange="onFotoPick(event)" style="font-size:12.5px"> <button type="button" class="iconbtn" onclick="clearFoto()">Remover</button></div>`;}
+  if(t==="photo"){const cur=val?fotoImg(val,160,120,(window._formArquivo&&window._formArquivo.nome)||"",window._formArquivo&&window._formArquivo.mime):'<div class="photo-box" id="fotoPrevEmpty">Nenhum arquivo anexado</div>';
+    return `<div class="field full"><label>${fl}</label><div id="fotoPrev">${cur}</div><input type="file" accept="image/*,.pdf,application/pdf" onchange="onFotoPick(event)" style="font-size:12.5px"> <button type="button" class="iconbtn" onclick="clearFoto()">Remover</button></div>`;}
   let input;
   if(t==="cat"){input=`<select id="f_${fn}"><option value="">—</option>${m.cats.map(o=>`<option ${val===o?"selected":""}>${o}</option>`).join("")}</select>`;}
   else if(t==="sel"){const opts=(fn==="status")?STATUS:(OPT[optKey]||[]);
@@ -1042,6 +1076,7 @@ function openForm(key,id){
   if(!canEdit())return toast("Seu perfil é somente leitura.");
   const m=MODMAP[key];const r=id?(DATA[key]||[]).find(x=>x.id===id):{};
   window._formFoto=(r&&r.foto)?r.foto:"";
+  window._formArquivo=(r&&r.foto)?{id:r.foto_drive_id||"",nome:r.foto_nome||"",mime:r.foto_mime||"",url:r.foto,viewUrl:r.foto_view_url||""}:null;
   let body="";
   m.sections.forEach(sec=>{
     body+=`<div class="form-sec">${sec.t}</div><div class="formgrid">`;
@@ -1056,6 +1091,10 @@ function saveForm(key,id){
   const m=MODMAP[key];const obj={};
   allFields(m).forEach(([fn,fl,t])=>{if(t==="photo")return;const el=document.getElementById("f_"+fn);if(el)obj[fn]=el.value.trim();});
   obj.foto=window._formFoto||"";
+  obj.foto_drive_id=(window._formArquivo&&window._formArquivo.id)||"";
+  obj.foto_nome=(window._formArquivo&&window._formArquivo.nome)||"";
+  obj.foto_mime=(window._formArquivo&&window._formArquivo.mime)||"";
+  obj.foto_view_url=(window._formArquivo&&window._formArquivo.viewUrl)||"";
   if(!obj.nome){toast("Informe o nome.");return;}
   if(!obj.status)obj.status="Pendente";
   if(id){const i=DATA[key].findIndex(x=>x.id===id);DATA[key][i]={...DATA[key][i],...obj};}
@@ -1210,7 +1249,7 @@ function _coletarRel(items,filtros){
         if(sec.t)body+=`<div class="sub">${_escR(sec.t)}</div>`;
         vals.forEach(([fn,fl])=>{body+=`<div class="row"><b>${_escR(fl)}:</b> ${_escR(r[fn])}</div>`;});
       });
-      if(r.foto)body+=`<div class="foto-label">📷 Foto</div><img class="rec-img" src="${r.foto}">`;
+      if(r.foto)body+=`<div class="foto-label">📷 Arquivo</div>${fotoImg(r.foto,520,260,r.foto_nome,r.foto_mime)}`;
       body+=`</div>`;});
   });
   return {body,total};
