@@ -82,6 +82,9 @@ section.block{padding:34px 0 10px}
 .row{display:flex;gap:8px;font-size:13.5px;color:var(--texto-sec);margin:5px 0;align-items:flex-start}
 .row .ri{width:18px;text-align:center;flex:none}
 .row a{color:var(--azul-principal);font-weight:500;word-break:break-word}
+.phone-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wa-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#25D366;color:#fff!important;font-size:15px;line-height:1;box-shadow:0 3px 9px rgba(37,211,102,.24);text-decoration:none;flex:none}
+.wa-btn:hover{background:#1DA851}
 .desc{font-size:13px;color:var(--texto-sec);margin-top:10px;border-top:1px dashed var(--cinza-borda);padding-top:10px}
 .empty{background:#fff;border:1px dashed var(--cinza-borda);border-radius:var(--radius-card);padding:40px 22px;text-align:center;color:var(--texto-sec)}
 .empty b{color:var(--azul-escuro)}
@@ -217,6 +220,25 @@ function fieldRow(icon,val,href){
   return `<div class="row"><span class="ri">${icon}</span><span>${v}</span></div>`;
 }
 function telHref(t){const d=(t||"").replace(/[^0-9]/g,"");return d?("tel:+55"+d):null;}
+function phoneDigits(t){
+  const nums=String(t||"").match(/\(?\d{2}\)?\s*\d{4,5}[-\s]?\d{4}/g)||[];
+  const cleaned=nums.map(n=>n.replace(/[^0-9]/g,"")).map(d=>d.startsWith("55")?d:"55"+d);
+  const mobile=cleaned.find(d=>/^55\d{2}9\d{8}$/.test(d));
+  return mobile||cleaned[0]||"";
+}
+function whatsHref(t){
+  const d=phoneDigits(t);
+  return d?`https://wa.me/${d}`:null;
+}
+function phoneRow(val,extra){
+  const phone=[val,extra].filter(Boolean).join(" / ");
+  if(!phone)return"";
+  const call=telHref(val||extra);
+  const wa=whatsHref(extra||val);
+  const phoneLink=call?`<a href="${call}" target="_blank" rel="noopener">${phone}</a>`:phone;
+  const waLink=wa?`<a class="wa-btn" href="${wa}" target="_blank" rel="noopener" title="Falar pelo WhatsApp" aria-label="Falar pelo WhatsApp">💬</a>`:"";
+  return `<div class="row"><span class="ri">📞</span><span class="phone-wrap">${phoneLink}${waLink}</span></div>`;
+}
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||/drive\.google\.com\/uc\?/i.test(src||"");}
 function mediaBlock(r,nome){
@@ -240,7 +262,7 @@ function rodoviariaCard(){
   return `<div class="item rodoviaria" style="grid-column:1/-1">
     <h3>🚉 ${info.nome}</h3>
     ${fieldRow("📍",info.endereco)}
-    ${fieldRow("📞",info.telefone,telHref(info.telefone))}
+    ${phoneRow(info.telefone,info.whatsapp||info.celular)}
     ${fieldRow("✉️",info.email,info.email?("mailto:"+info.email):null)}
     ${fieldRow("🌐",site,site?(site.startsWith("http")?site:"https://"+site):null)}
   </div>`;
@@ -288,7 +310,7 @@ function openCat(key){
         ${mediaBlock(r,nome)}
         ${r.categoria?`<span class="tag" style="background:${color}">${r.categoria}</span>`:""}
         ${fieldRow("📍",r.endereco)}
-        ${fieldRow("📞",r.telefone,telHref(r.telefone))}
+        ${phoneRow(r.telefone||r.telefones,r.whatsapp||r.celular)}
         ${fieldRow("✉️",r.email,r.email?("mailto:"+r.email):null)}
         ${fieldRow("🌐",site,site?(site.startsWith("http")?site:"https://"+site):null)}
         ${fieldRow("📷",insta)}
