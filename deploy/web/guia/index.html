@@ -221,12 +221,15 @@ function fieldRow(icon,val,href){
   const v=href?`<a href="${href}" target="_blank" rel="noopener">${val}</a>`:val;
   return `<div class="row"><span class="ri">${icon}</span><span>${v}</span></div>`;
 }
-function telHref(t){const d=(t||"").replace(/[^0-9]/g,"");return d?("tel:+55"+d):null;}
 function phoneDigits(t){
   const nums=String(t||"").match(/\(?\d{2}\)?\s*\d{4,5}[-\s]?\d{4}/g)||[];
   const cleaned=nums.map(n=>n.replace(/[^0-9]/g,"")).map(d=>d.startsWith("55")?d:"55"+d);
   const mobile=cleaned.find(d=>/^55\d{2}9\d{8}$/.test(d));
   return mobile||cleaned[0]||"";
+}
+function telHref(t){
+  const d=phoneDigits(t);
+  return d?("tel:+"+d):null;
 }
 function whatsHref(t){
   const d=phoneDigits(t);
