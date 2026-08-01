@@ -11,6 +11,7 @@ const session    = require("express-session");
 const PgSession  = require("connect-pg-simple")(session);
 const path       = require("path");
 const crypto     = require("crypto");
+const fs         = require("fs");
 
 const app  = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -35,6 +36,63 @@ app.use(session({
   saveUninitialized: false,
   cookie: { httpOnly: true, sameSite: "lax", secure: secureCookies, maxAge: 8 * 60 * 60 * 1000 }
 }));
+
+function enhanceGuiaHtml(html) {
+  let out = String(html || "");
+
+  if (!out.includes(".insta-btn{")) {
+    out = out.replace(
+      ".wa-btn:hover{background:#1DA851}",
+      ".wa-btn:hover{background:#1DA851}\n" +
+      ".insta-btn{display:inline-flex;align-items:center;gap:7px;border-radius:999px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF,#515BD4);color:#fff!important;font-weight:700;font-size:12.5px;padding:7px 12px;line-height:1;box-shadow:0 3px 10px rgba(221,42,123,.22);text-decoration:none}\n" +
+      ".insta-btn:hover{filter:brightness(.95)}"
+    );
+  }
+
+  if (!out.includes("function instagramHref")) {
+    out = out.replace(
+      "function esc(s){",
+      "function instagramHref(v){\n" +
+      "  const text=String(v||\"\").trim();\n" +
+      "  if(!text)return\"\";\n" +
+      "  const url=text.match(/https?:\\/\\/(?:www\\.)?instagram\\.com\\/[A-Za-z0-9._]+\\/?/i);\n" +
+      "  if(url)return url[0].replace(/\\/?$/,\"/\");\n" +
+      "  const path=text.match(/instagram\\.com\\/([A-Za-z0-9._]+)/i);\n" +
+      "  if(path)return `https://www.instagram.com/${path[1]}/`;\n" +
+      "  const at=text.match(/@([A-Za-z0-9._]+)/);\n" +
+      "  if(at)return `https://www.instagram.com/${at[1]}/`;\n" +
+      "  return\"\";\n" +
+      "}\n" +
+      "function instagramRow(v){\n" +
+      "  const href=instagramHref(v);\n" +
+      "  if(!href)return\"\";\n" +
+      "  return `<div class=\"row\"><span class=\"ri\">📷</span><span><a class=\"insta-btn\" href=\"${href}\" target=\"_blank\" rel=\"noopener\" title=\"Abrir Instagram\" aria-label=\"Abrir Instagram\">📷 Instagram</a></span></div>`;\n" +
+      "}\n" +
+      "function siteHref(v){\n" +
+      "  const site=String(v||\"\").trim();\n" +
+      "  if(!site||instagramHref(site))return\"\";\n" +
+      "  return site.startsWith(\"http\")?site:\"https://\"+site;\n" +
+      "}\n" +
+      "function esc(s){"
+    );
+  }
+
+  out = out.replace("const site=info.site;\n  return `<div", "const site=info.site;\n  const siteUrl=siteHref(site);\n  return `<div");
+  out = out.replace("${fieldRow(\"🌐\",site,site?(site.startsWith(\"http\")?site:\"https://\"+site):null)}", "${siteUrl?fieldRow(\"🌐\",site,siteUrl):\"\"}\n    ${instagramRow(info.instagram||info.redes||site)}");
+  out = out.replace("const insta=r.instagram;", "const siteUrl=siteHref(site);\n      const insta=r.instagram||r.redes||site;");
+  out = out.replace("${fieldRow(\"🌐\",site,site?(site.startsWith(\"http\")?site:\"https://\"+site):null)}", "${siteUrl?fieldRow(\"🌐\",site,siteUrl):\"\"}");
+  out = out.replace("${fieldRow(\"📷\",insta)}", "${instagramRow(insta)}");
+
+  return out;
+}
+
+app.get(["/guia", "/guia/", "/guia/index.html"], (req, res, next) => {
+  const guiaPath = path.join(__dirname, "..", "web", "guia", "index.html");
+  fs.readFile(guiaPath, "utf8", (err, html) => {
+    if (err) return next(err);
+    res.type("html").send(enhanceGuiaHtml(html));
+  });
+});
 
 // Serve os arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, "..", "web")));
@@ -313,7 +371,7 @@ app.get("/api/users", requireAuth, requireAdmin, async (req, res) => {
 app.post("/api/users", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { email, nome, role, senha } = req.body;
-    if (!senha || senha.length < 6) return res.status(400).json({ error: "Senha muito curta (mín. 6 caracteres)" });
+    if (!senha || senha.length < 4) return res.status(400).json({ error: "Senha muito curta (mín. 4 caracteres)" });
     const hash = await bcrypt.hash(senha, 12);
     const { rows } = await pool.query(
       "INSERT INTO users (email, name, password_hash, role) VALUES ($1,$2,$3,$4) RETURNING id,email,name,role,active",
