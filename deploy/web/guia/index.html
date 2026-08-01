@@ -85,6 +85,8 @@ section.block{padding:34px 0 10px}
 .phone-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .wa-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#25D366;color:#fff!important;font-size:15px;line-height:1;box-shadow:0 3px 9px rgba(37,211,102,.24);text-decoration:none;flex:none}
 .wa-btn:hover{background:#1DA851}
+.insta-btn{display:inline-flex;align-items:center;gap:7px;border-radius:999px;background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF,#515BD4);color:#fff!important;font-weight:700;font-size:12.5px;padding:7px 12px;line-height:1;box-shadow:0 3px 10px rgba(221,42,123,.22);text-decoration:none}
+.insta-btn:hover{filter:brightness(.95)}
 .desc{font-size:13px;color:var(--texto-sec);margin-top:10px;border-top:1px dashed var(--cinza-borda);padding-top:10px}
 .empty{background:#fff;border:1px dashed var(--cinza-borda);border-radius:var(--radius-card);padding:40px 22px;text-align:center;color:var(--texto-sec)}
 .empty b{color:var(--azul-escuro)}
@@ -239,6 +241,27 @@ function phoneRow(val,extra){
   const waLink=wa?`<a class="wa-btn" href="${wa}" target="_blank" rel="noopener" title="Falar pelo WhatsApp" aria-label="Falar pelo WhatsApp">💬</a>`:"";
   return `<div class="row"><span class="ri">📞</span><span class="phone-wrap">${phoneLink}${waLink}</span></div>`;
 }
+function instagramHref(v){
+  const text=String(v||"").trim();
+  if(!text)return"";
+  const url=text.match(/https?:\/\/(?:www\.)?instagram\.com\/[A-Za-z0-9._]+\/?/i);
+  if(url)return url[0].replace(/\/?$/,"/");
+  const path=text.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
+  if(path)return `https://www.instagram.com/${path[1]}/`;
+  const at=text.match(/@([A-Za-z0-9._]+)/);
+  if(at)return `https://www.instagram.com/${at[1]}/`;
+  return"";
+}
+function instagramRow(v){
+  const href=instagramHref(v);
+  if(!href)return"";
+  return `<div class="row"><span class="ri">📷</span><span><a class="insta-btn" href="${href}" target="_blank" rel="noopener" title="Abrir Instagram" aria-label="Abrir Instagram">📷 Instagram</a></span></div>`;
+}
+function siteHref(v){
+  const site=String(v||"").trim();
+  if(!site||instagramHref(site))return"";
+  return site.startsWith("http")?site:"https://"+site;
+}
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||/drive\.google\.com\/uc\?/i.test(src||"");}
 function mediaBlock(r,nome){
@@ -259,12 +282,14 @@ function rodoviariaCard(){
   }
   if(!info)return "";
   const site=info.site;
+  const siteUrl=siteHref(site);
   return `<div class="item rodoviaria" style="grid-column:1/-1">
     <h3>🚉 ${info.nome}</h3>
     ${fieldRow("📍",info.endereco)}
     ${phoneRow(info.telefone,info.whatsapp||info.celular)}
     ${fieldRow("✉️",info.email,info.email?("mailto:"+info.email):null)}
-    ${fieldRow("🌐",site,site?(site.startsWith("http")?site:"https://"+site):null)}
+    ${siteUrl?fieldRow("🌐",site,siteUrl):""}
+    ${instagramRow(info.instagram||info.redes||site)}
   </div>`;
 }
 function _semPrefixo(t){return String(t||"").replace(/^\s*Seg\.\s*a\s*Sex\.\s*[—\-–]\s*/i,"").replace(/^\s*(Ida|Volta)\s*:\s*/i,"").trim();}
@@ -304,7 +329,8 @@ function openCat(key){
     body=items.map(r=>{
       const nome=r.nome||r.artesao_nome||"(sem nome)";
       const site=r.site||r.website||r.url;
-      const insta=r.instagram;
+      const siteUrl=siteHref(site);
+      const insta=r.instagram||r.redes||site;
       return `<div class="item">
         <h3>${nome}</h3>
         ${mediaBlock(r,nome)}
@@ -312,8 +338,8 @@ function openCat(key){
         ${fieldRow("📍",r.endereco)}
         ${phoneRow(r.telefone||r.telefones,r.whatsapp||r.celular)}
         ${fieldRow("✉️",r.email,r.email?("mailto:"+r.email):null)}
-        ${fieldRow("🌐",site,site?(site.startsWith("http")?site:"https://"+site):null)}
-        ${fieldRow("📷",insta)}
+        ${siteUrl?fieldRow("🌐",site,siteUrl):""}
+        ${instagramRow(insta)}
         ${fieldRow("🕒",r.horario||r.funcionamento)}
         ${r.descricao?`<div class="desc">${r.descricao}</div>`:""}
       </div>`;}).join("")|| '<div class="empty" style="grid-column:1/-1">Sem locais nesta categoria ainda.</div>';
