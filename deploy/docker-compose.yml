@@ -39,6 +39,8 @@ services:
       GOOGLE_OAUTH_CLIENT_SECRET:    ${GOOGLE_OAUTH_CLIENT_SECRET:-}
       GOOGLE_OAUTH_REFRESH_TOKEN:    ${GOOGLE_OAUTH_REFRESH_TOKEN:-}
       GOOGLE_DRIVE_UPLOAD_PUBLIC:    ${GOOGLE_DRIVE_UPLOAD_PUBLIC:-false}
+    volumes:
+      - ./web:/app/web:ro
     depends_on:
       postgres:
         condition: service_healthy
