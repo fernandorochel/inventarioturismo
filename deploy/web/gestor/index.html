@@ -1390,7 +1390,7 @@ async function _saveUser(idx){
   const role=document.getElementById("u_role").value;
   if(!nome||!email){toast("Preencha nome e login.");return;}
   if(idx<0&&!senha){toast("Informe a senha.");return;}
-  if(senha&&senha.length<6){toast("A senha deve ter no mínimo 6 caracteres.");return;}
+  if(senha&&senha.length<4){toast("A senha deve ter no mínimo 4 caracteres.");return;}
   try{
     let res;
     if(idx<0){

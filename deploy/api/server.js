@@ -345,6 +345,9 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
 // Rota pública: só publicar_guia=Sim e não Inativo
 app.get("/api/public", async (req, res) => {
   try {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
     const { rows } = await pool.query("SELECT data FROM inventory WHERE id=1");
     const allData = rows[0]?.data || {};
     const pub = {};

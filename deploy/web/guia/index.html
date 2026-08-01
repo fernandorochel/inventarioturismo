@@ -186,7 +186,7 @@ const PALETTE=["#0B63B6","#F58220","#FDB515","#2E8B3C","#10A8E8","#66C943","#119
 function colorFor(i){return PALETTE[i%PALETTE.length];}
 let DATA={};
 async function loadData(){
-  try{const r=await fetch("/api/public");if(r.ok){const j=await r.json();DATA=j.data||{};}else{DATA={};}}catch(e){DATA={};}
+  try{const r=await fetch("/api/public?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();DATA=j.data||{};}else{DATA={};}}catch(e){DATA={};}
   if(!DATA||typeof DATA!=="object")DATA={};
 }
 function recs(key){return Array.isArray(DATA[key])?DATA[key]:[];}
