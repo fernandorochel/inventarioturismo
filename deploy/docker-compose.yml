@@ -50,9 +50,6 @@ services:
         aliases:
           - turismo-itatinga_inventario_undefined
           - turismo-itatinga-inventario
-    ports:
-      - "${APP_PORT:-3002}:80"
-
 volumes:
   postgres_data:
 
