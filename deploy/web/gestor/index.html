@@ -648,6 +648,19 @@ function go(view){currentView=view;setActive(view);closeSide();
 /* ===== dashboard ===== */
 function totalRecords(){return MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).length,0);}
 function hasDescritivo(r){return !!(r&&String(r.descricao||"").trim());}
+const MODULOS_SEM_EXIGENCIA_FOTO=new Set(["demanda_turistica","atas_comtur","horarios_onibus","cursos_capacitacao"]);
+function exigeFotoGuia(key,r){
+  return r&&r.publicar_guia==="Sim"&&r.status!=="Inativo"&&!MODULOS_SEM_EXIGENCIA_FOTO.has(key);
+}
+function pendenciasFotoGuia(){
+  const lista=[];
+  MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
+    if(exigeFotoGuia(m.key,r)&&(!r.foto||String(r.foto).trim()==="")){
+      lista.push({mod:m.label,icon:m.icon,nome:r.nome||r.local_nome||r.artesao_nome||"(sem nome)",status:r.status||"—",cat:r.categoria||"—"});
+    }
+  }));
+  return lista;
+}
 function renderDashboard(){
   /* ── métricas principais ── */
   const total=totalRecords();
@@ -691,7 +704,8 @@ function renderDashboard(){
   const alertas=[];
   if(pend>0)alertas.push({t:"warn",msg:`${pend} cadastro(s) pendente(s) ou em revisão`,rel:"pend"});
   if(modSemReg>0)alertas.push({t:"warn",msg:`${modSemReg} módulo(s) sem nenhum registro`,rel:"semreg"});
-  if(comFoto<total)alertas.push({t:"info",msg:`${total-comFoto} cadastro(s) sem foto anexada`,rel:"semfoto"});
+  const semFotoGuia=pendenciasFotoGuia().length;
+  if(semFotoGuia>0)alertas.push({t:"info",msg:`${semFotoGuia} cadastro(s) publicados no Guia sem foto`,rel:"semfoto"});
   if(comResp<total)alertas.push({t:"info",msg:`${total-comResp} cadastro(s) sem responsável preenchido`,rel:"semresp"});
   if(comDesc<total)alertas.push({t:"info",msg:`${total-comDesc} cadastro(s) sem descritivo`,rel:"semdesc"});
 
@@ -1519,12 +1533,11 @@ function relatorioAlerta(tipo){
   }
 
   else if(tipo==="semfoto"){
-    titulo="🖼️ Cadastros sem foto anexada";
-    const lista=[];
-    MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{if(!r.foto||r.foto.trim()==="")lista.push({mod:m.label,icon:m.icon,nome:r.nome||"(sem nome)",status:r.status||"—",cat:r.categoria||"—"});}));
-    if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros possuem foto.</p>';}
+    titulo="🖼️ Cadastros publicados no Guia sem foto";
+    const lista=pendenciasFotoGuia();
+    if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros publicados no Guia possuem foto.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> sem foto.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> publicados no Guia sem foto. Módulos internos e informativos sem exigência de imagem não entram nesta lista.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
