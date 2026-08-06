@@ -27,6 +27,8 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
+      args:
+        APP_BUILD_VERSION: "2026-08-06-cache-fotos-v2"
     restart: unless-stopped
     environment:
       DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo
