@@ -86,16 +86,36 @@ function enhanceGuiaHtml(html) {
   return out;
 }
 
+function noStore(res) {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+}
+
 app.get(["/guia", "/guia/", "/guia/index.html"], (req, res, next) => {
   const guiaPath = path.join(__dirname, "..", "web", "guia", "index.html");
   fs.readFile(guiaPath, "utf8", (err, html) => {
     if (err) return next(err);
+    noStore(res);
     res.type("html").send(enhanceGuiaHtml(html));
   });
 });
 
+app.get(["/gestor", "/gestor/", "/gestor/index.html"], (req, res, next) => {
+  const gestorPath = path.join(__dirname, "..", "web", "gestor", "index.html");
+  fs.readFile(gestorPath, "utf8", (err, html) => {
+    if (err) return next(err);
+    noStore(res);
+    res.type("html").send(html);
+  });
+});
+
 // Serve os arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, "..", "web")));
+app.use(express.static(path.join(__dirname, "..", "web"), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith(".html")) noStore(res);
+  }
+}));
 
 // ── Guards ───────────────────────────────────────────────────
 function requireAuth(req, res, next) {
