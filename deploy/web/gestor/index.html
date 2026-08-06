@@ -979,20 +979,13 @@ function exportarPainel(){
   const evRows=ev.data.map(d=>{const pct=ev.total?d[1]/ev.total*100:0;return `<div class="r"><div class="rl"><span>${(EVENTO_ICONS[d[0]]||"\U0001F4C5")+" "+d[0]}</span><b>${fmt(pct)} <i>(${d[1]})</i></b></div><div class="rb"><div style="width:${pct.toFixed(2)}%;background:linear-gradient(90deg,#F58220,#FDB515)"></div></div></div>`;}).join("");
   const sec=(title,inner)=>`<h2>${title}</h2>${inner||'<p style="font-size:12px;color:#777">Sem dados.</p>'}`;
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Painel — Gestao do Turismo de Itatinga</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;color:#2D2D2D;margin:28px}
-   header{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1A3A6E;padding-bottom:12px;margin-bottom:8px}
-   header img{height:52px;object-fit:contain} header .t1{font-size:20px;font-weight:bold;color:#1A3A6E} header .t2{font-size:12px;color:#555}
-   h2{color:#1A3A6E;border-bottom:2px solid #2563B0;padding-bottom:4px;margin-top:26px;font-size:15px}
-   .r{margin:9px 0}.rl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}.rl b{color:#1A3A6E}.rl i{color:#888;font-weight:400;font-style:normal}
-   .rb{background:#eef2f8;border-radius:6px;height:10px;overflow:hidden}.rb>div{height:100%;background:linear-gradient(90deg,#2563B0,#1A3A6E);border-radius:6px}
-   .bar{margin:14px 0}@media print{.bar{display:none}}
-   button{background:#1A3A6E;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer}</style></head>
-  <body><header><img src="${LOGO_PREF}"><div><div class="t1">Gestao do Turismo de Itatinga</div><div class="t2">Painel — Centro de Operacoes · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s) no inventario</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
+  ${_printCSS(`.r{margin:8px 0}.rl{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:3px}.rl b{color:#1A3A6E;white-space:nowrap}.rl i{color:#888;font-weight:400;font-style:normal}.rb{background:#eef2f8;border-radius:6px;height:9px;overflow:hidden}.rb>div{height:100%;background:linear-gradient(90deg,#2563B0,#1A3A6E);border-radius:6px}`)}</head>
+  <body><main class="print-page"><header><img src="${LOGO_PREF}"><div><div class="t1">Gestao do Turismo de Itatinga</div><div class="t2">Painel — Centro de Operacoes · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s) no inventario</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
   <div class="bar"><button onclick="window.print()">\U0001F5A8️ Imprimir / Salvar PDF</button></div>
   ${sec(`Distribuicao por modulo — ${totalAtivos} cadastros ativos (100%)`,barRows(byMod,totalAtivos))}
   ${sec(`Arquiteturas — ${arq.total} cadastradas (100%)`,barRows(arq.data,arq.total))}
   ${sec(`Eventos — ${ev.total} cadastrados (100%)`,evRows)}
-  </body></html>`;
+  </main></body></html>`;
   const w=window.open("","_blank");if(!w)return toast("Permita pop-ups para abrir o painel exportado.");
   w.document.open();w.document.write(html);w.document.close();toast("Painel exportado");
 }
@@ -1252,6 +1245,41 @@ function _toggleAllExp(v){document.querySelectorAll(".expchk").forEach(c=>c.chec
 function _escR(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function _itemDeModulo(m){return {label:m.label,icon:m.icon,fields:allFields(m),sections:m.sections,recs:(DATA[m.key]||[])};}
 function _itemMunicipio(){return {label:MUNICIPIO.label,icon:MUNICIPIO.icon,fields:allFields(MUNICIPIO),recs:((DATA._municipio&&Object.keys(DATA._municipio).length)?[DATA._municipio]:[])};}
+function _printCSS(extra){
+  return `<style>
+   @page{size:A4 portrait;margin:12mm}
+   *{box-sizing:border-box}
+   html,body{margin:0;background:#fff}
+   body{font-family:Arial,Helvetica,sans-serif;color:#2D2D2D;font-size:12px;line-height:1.35;padding:18px}
+   .print-page{width:100%;max-width:190mm;margin:0 auto}
+   header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #1A3A6E;padding-bottom:10px;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}
+   header img{height:46px;max-width:34mm;object-fit:contain;flex-shrink:0}
+   header .t1{font-size:17px;font-weight:bold;color:#1A3A6E}
+   header .t2{font-size:11px;color:#555}
+   h1,h2,h3{break-after:avoid;page-break-after:avoid}
+   h2{color:#1A3A6E;border-bottom:2px solid #2563B0;padding-bottom:4px;margin:18px 0 8px;font-size:14px}
+   h3{margin:0 0 7px;color:#1A3A6E;font-size:13px}
+   table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px;page-break-inside:auto}
+   th{background:#1A3A6E;color:#fff;padding:6px 7px;text-align:left;font-size:10.5px}
+   td{padding:5px 7px;border:1px solid #e2e8f0;vertical-align:top}
+   th,td{overflow-wrap:anywhere;word-break:break-word}
+   tr{page-break-inside:avoid;break-inside:avoid}
+   .rec{border:1px solid #ddd;border-radius:6px;padding:10px 12px;margin:8px 0;break-inside:avoid;page-break-inside:avoid}
+   .row{font-size:11.5px;margin:2px 0;overflow-wrap:anywhere}.row b{color:#1A3A6E}
+   .sub{font-size:10.5px;font-weight:bold;color:#2563B0;margin:8px 0 3px;text-transform:uppercase;letter-spacing:.03em}
+   .rec-img{max-width:100%;max-height:210px;border-radius:5px;margin-top:5px;border:1px solid #ccc;display:block;object-fit:contain}
+   .foto-label{font-size:10px;font-weight:bold;color:#2563B0;text-transform:uppercase;letter-spacing:.04em;margin-top:10px}
+   .bar,.no-print{margin:0 0 12px;text-align:right}
+   button{background:#1A3A6E;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer}
+   @media print{
+    body{padding:0}
+    .print-page{max-width:none;width:100%}
+    .bar,.no-print{display:none!important}
+    a{color:#1A3A6E;text-decoration:none}
+   }
+   ${extra||""}
+  </style>`;
+}
 function _coletarRel(items,filtros){
   filtros=filtros||{};const q=(filtros.q||"").toLowerCase(),st=filtros.st||"",cat=filtros.cat||"";
   let total=0,body="";
@@ -1280,20 +1308,10 @@ function _coletarRel(items,filtros){
 }
 function _docHTML(body,total){
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório — Gestão do Turismo de Itatinga</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;color:#2D2D2D;margin:28px}
-   header{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1A3A6E;padding-bottom:12px;margin-bottom:8px}
-   header img{height:52px;object-fit:contain} header .t1{font-size:20px;font-weight:bold;color:#1A3A6E} header .t2{font-size:12px;color:#555}
-   h2{color:#1A3A6E;border-bottom:2px solid #2563B0;padding-bottom:4px;margin-top:24px;font-size:16px}
-   .rec{border:1px solid #ddd;border-radius:8px;padding:12px 14px;margin:10px 0;page-break-inside:avoid}
-   .rec h3{margin:0 0 8px;color:#1A3A6E;font-size:14px}.row{font-size:12.5px;margin:3px 0}.row b{color:#1A3A6E}
-   .sub{font-size:12px;font-weight:bold;color:#2563B0;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.03em}
-   .rec-img{max-width:100%;max-height:260px;border-radius:6px;margin-top:6px;border:1px solid #ccc;display:block;object-fit:contain}
-   .foto-label{font-size:11px;font-weight:bold;color:#2563B0;text-transform:uppercase;letter-spacing:.04em;margin-top:12px}
-   .bar{margin:14px 0}@media print{.bar{display:none}}
-   button{background:#1A3A6E;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer}</style></head>
-  <body><header><img src="${LOGO_PREF}"><div><div class="t1">Gestão do Turismo de Itatinga</div><div class="t2">Relatório do Inventário Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
+  ${_printCSS()}</head>
+  <body><main class="print-page"><header><img src="${LOGO_PREF}"><div><div class="t1">Gestão do Turismo de Itatinga</div><div class="t2">Relatório do Inventário Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
   <div class="bar"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
-  ${body}</body></html>`;
+  ${body}</main></body></html>`;
 }
 function exportarPDF(items,filtros){
   const {body,total}=_coletarRel(items,filtros);
@@ -1344,22 +1362,15 @@ function gerarListaResponsaveis(){
   if(!total)return toast("Nenhum responsável cadastrado nos itens selecionados.");
   const html2=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
   <title>Lista de Responsáveis — Gestão do Turismo de Itatinga</title>
-  <style>body{font-family:Arial,sans-serif;color:#2D2D2D;margin:28px}
-   header{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1A3A6E;padding-bottom:12px;margin-bottom:16px}
-   header img{height:52px;object-fit:contain}.t1{font-size:18px;font-weight:bold;color:#1A3A6E}.t2{font-size:12px;color:#555}
-   h2{color:#1A3A6E;font-size:15px;margin-bottom:12px}
-   table{width:100%;border-collapse:collapse;font-size:13px}
-   th{background:#1A3A6E;color:#fff;padding:8px 10px;text-align:left;font-size:12px}
-   td{padding:7px 10px;border-bottom:1px solid #e5e7eb}
-   tr:nth-child(even) td{background:#f8fafc}
-   .bar{margin:12px 0}@media print{.bar{display:none}}
-   button{background:#1A3A6E;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer}</style></head>
+  ${_printCSS(`tr:nth-child(even) td{background:#f8fafc} h2{border-bottom:0;margin-bottom:10px}`)}</head>
   <body>
+  <main class="print-page">
   <header><img src="${LOGO_PREF}"><div><div class="t1">Lista de Responsáveis — Turismo de Itatinga</div><div class="t2">Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
   <div class="bar"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
   <h2>👤 Contatos dos Responsáveis por Empreendimento</h2>
   <table><thead><tr><th>Módulo</th><th>Nome do Empreendimento</th><th>Responsável</th><th>Telefone / WhatsApp</th></tr></thead>
   <tbody>${rows}</tbody></table>
+  </main>
   </body></html>`;
   const w=window.open("","_blank");if(!w)return toast("Permita pop-ups para abrir.");
   w.document.open();w.document.write(html2);w.document.close();
@@ -1637,13 +1648,9 @@ function relatorioAlerta(tipo){
   const w=window.open("","_blank","width=900,height=700");
   w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
     <title>${titulo} — Gestão do Turismo Itatinga</title>
-    <style>
-      body{font-family:Arial,sans-serif;font-size:13px;color:#1f2937;margin:0;padding:24px 32px;background:#fff}
-      @media print{body{padding:16px} .no-print{display:none}}
-      table{page-break-inside:auto} tr{page-break-inside:avoid}
-      h2{color:#1d4ed8;margin:0 0 14px}
-    </style>
+    ${_printCSS(`h2{border-bottom:0;color:#1d4ed8;margin:0 0 12px}.print-page>div:first-of-type{break-inside:avoid;page-break-inside:avoid}`)}
   </head><body>
+  <main class="print-page">
   <div class="no-print" style="text-align:right;margin-bottom:12px">
     <button onclick="window.print()" style="background:#1d4ed8;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Salvar PDF</button>
   </div>
@@ -1651,6 +1658,7 @@ function relatorioAlerta(tipo){
   <h2>${titulo}</h2>
   ${corpo}
   ${rodape}
+  </main>
   </body></html>`);
   w.document.close();
 }
@@ -1747,19 +1755,9 @@ function gerarListaFesta(){
 
   const html2=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
     <title>Medalhas de Honra ao Mérito — Festa do Trabalhador ${ano}</title>
-    <style>
-      body{font-family:Arial,sans-serif;color:#1f2937;margin:0;padding:28px 36px;background:#fff}
-      @media print{.no-print{display:none}body{padding:18px}}
-      h1{color:#1e3a8a;font-size:20px;margin:0}
-      h2{color:#4b5563;font-size:13px;font-weight:400;margin:4px 0 0}
-      table{width:100%;border-collapse:collapse;margin-top:20px}
-      thead tr{background:#1e3a8a}
-      thead th{color:#fff;padding:11px 14px;text-align:left;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
-      tfoot td{padding:10px 14px;font-size:11.5px;color:#6b7280;border-top:2px solid #e2e8f0}
-      .header{border-bottom:3px solid #1e3a8a;padding-bottom:14px;margin-bottom:6px;display:flex;align-items:flex-start;justify-content:space-between}
-      .medal{font-size:32px;line-height:1}
-    </style>
+    ${_printCSS(`h1{color:#1e3a8a;font-size:18px;margin:0}h2{border-bottom:0;color:#4b5563;font-size:12px;font-weight:400;margin:4px 0 0}table{margin-top:16px}tfoot td{font-size:10.5px;color:#6b7280;border-top:2px solid #e2e8f0}.header{border-bottom:3px solid #1e3a8a;padding-bottom:12px;margin-bottom:6px;display:flex;align-items:flex-start;justify-content:space-between;break-inside:avoid;page-break-inside:avoid}.medal{font-size:28px;line-height:1}`)}
   </head><body>
+  <main class="print-page">
   <div class="no-print" style="text-align:right;margin-bottom:14px">
     <button onclick="window.print()" style="background:#1e3a8a;color:#fff;border:none;padding:9px 20px;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Salvar PDF</button>
   </div>
@@ -1776,6 +1774,7 @@ function gerarListaFesta(){
     <tbody>${rows}</tbody>
     <tfoot><tr><td colspan="4">Total de indicados: <b>${lista.length}</b> · Gerado pelo Sistema de Gestão do Turismo de Itatinga</td></tr></tfoot>
   </table>
+  </main>
   </body></html>`;
 
   try{
