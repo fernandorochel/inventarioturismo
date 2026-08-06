@@ -646,6 +646,7 @@ function go(view){currentView=view;setActive(view);closeSide();
   renderDashboard();}
 /* ===== dashboard ===== */
 function totalRecords(){return MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).length,0);}
+function hasDescritivo(r){return !!(r&&String(r.descricao||"").trim());}
 function renderDashboard(){
   /* ── métricas principais ── */
   const total=totalRecords();
@@ -655,6 +656,7 @@ function renderDashboard(){
   const pend=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.status==="Pendente"||r.status==="Em revisão").length,0);
   const comFoto=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.foto&&r.foto.length>10).length,0);
   const comResp=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.responsavel&&r.responsavel.trim()).length,0);
+  const comDesc=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(hasDescritivo).length,0);
   const noGuia=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.publicar_guia==="Sim").length,0);
   const totalLeitos=(DATA.hospedagem||[]).reduce((s,r)=>s+(parseInt(r.n_leitos,10)||0),0);
   const modComReg=MODULES.filter(m=>(DATA[m.key]||[]).length>0).length;
@@ -690,6 +692,7 @@ function renderDashboard(){
   if(modSemReg>0)alertas.push({t:"warn",msg:`${modSemReg} módulo(s) sem nenhum registro`,rel:"semreg"});
   if(comFoto<total)alertas.push({t:"info",msg:`${total-comFoto} cadastro(s) sem foto anexada`,rel:"semfoto"});
   if(comResp<total)alertas.push({t:"info",msg:`${total-comResp} cadastro(s) sem responsável preenchido`,rel:"semresp"});
+  if(comDesc<total)alertas.push({t:"info",msg:`${total-comDesc} cadastro(s) sem descritivo`,rel:"semdesc"});
 
   /* ── feed recentes ── */
   const recent=[];MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>recent.push({mod:m.label,icon:m.icon,nome:r.nome||"(sem nome)",key:m.key,id:r.id,st:r.status||"Pendente"})));
@@ -1561,6 +1564,35 @@ function relatorioAlerta(tipo){
           <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.resp==="—"?'<i style="color:#9ca3af">não informado</i>':r.resp}</td>
           <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.tel==="—"?'<i style="color:#9ca3af">não informado</i>':r.tel}</td>
           <td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap">${flags.join(" ")}</td>
+        </tr>`;});
+      corpo+="</tbody></table>";
+    }
+  }
+
+  else if(tipo==="semdesc"){
+    titulo="📝 Cadastros sem descritivo";
+    const lista=[];
+    MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
+      if(!hasDescritivo(r))lista.push({mod:m.label,icon:m.icon,nome:r.nome||r.local_nome||r.artesao_nome||"(sem nome)",status:r.status||"—",cat:r.categoria||"—"});
+    }));
+    if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros possuem descritivo preenchido.</p>';}
+    else{
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> sem descritivo preenchido.</p>`;
+      corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#dbeafe;color:#1e3a8a">
+          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Módulo</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Nome do cadastro</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Categoria</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Status</th>
+        </tr></thead><tbody>`;
+      lista.forEach((r,i)=>{
+        corpo+=`<tr style="background:${i%2?'#f8fafc':'#fff'}">
+          <td style="padding:6px 10px;border:1px solid #e2e8f0">${i+1}</td>
+          <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.icon} ${r.mod}</td>
+          <td style="padding:6px 10px;border:1px solid #e2e8f0"><b>${r.nome}</b></td>
+          <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.cat}</td>
+          <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.status}</td>
         </tr>`;});
       corpo+="</tbody></table>";
     }
