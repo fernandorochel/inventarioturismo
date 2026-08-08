@@ -224,24 +224,33 @@ async function uploadToDrive({ fileName, mimeType, buffer }) {
     throw err;
   }
 
-  if (process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true") {
-    await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions?supportsAllDrives=true`, {
+  const isPublicUpload = process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true";
+  if (isPublicUpload) {
+    const permissionRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions?supportsAllDrives=true`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ role: "reader", type: "anyone" })
-    }).catch(() => null);
+    });
+    if (!permissionRes.ok) {
+      const err = new Error("Arquivo enviado, mas não foi possível liberar visualização pública no Google Drive");
+      err.status = 502;
+      throw err;
+    }
   }
 
+  const viewUrl = file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
+  const imageUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
+  const downloadUrl = `https://drive.google.com/uc?export=download&id=${file.id}`;
   return {
     id: file.id,
     name: file.name,
-    viewUrl: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`,
-    directUrl: process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true"
-      ? `https://drive.google.com/uc?export=view&id=${file.id}`
-      : (file.webContentLink || file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`)
+    viewUrl,
+    imageUrl,
+    downloadUrl,
+    directUrl: isPublicUpload ? imageUrl : (file.webContentLink || viewUrl)
   };
 }
 

@@ -445,9 +445,18 @@ window._formArquivo=null;
 function resizeImg(src,max,q,cb){const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",q));}catch(e){cb(src);}};img.onerror=()=>cb(src);img.src=src;}
 function fileDataUrl(f){return new Promise((ok,fail)=>{const rd=new FileReader();rd.onload=e=>ok(e.target.result);rd.onerror=fail;rd.readAsDataURL(f);});}
 function resizeImgAsync(src,max,q){return new Promise(ok=>resizeImg(src,max,q,ok));}
-function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||/drive\.google\.com\/uc\?/i.test(src||"");}
+function driveIdFromUrl(src){
+  const s=String(src||"");
+  return (s.match(/drive\.google\.com\/file\/d\/([^/]+)/i)||s.match(/[?&]id=([^&]+)/i)||s.match(/drive\.google\.com\/(?:thumbnail|uc)\?[^#]*id=([^&]+)/i)||[])[1]||"";
+}
+function driveImageUrl(src){
+  const id=driveIdFromUrl(src);
+  return id?`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`:"";
+}
+function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||!!driveIdFromUrl(src);}
+function fotoSrc(src,mime){if(!src)return"";if(/^data:image\//i.test(src))return src;if(driveIdFromUrl(src))return driveImageUrl(src);return src;}
 function arquivoLink(src,nome){const n=_esc(nome||"Abrir arquivo");return `<a href="${src}" target="_blank" rel="noopener" class="btn-sec btn-sm" style="display:inline-flex;margin-bottom:8px">📎 ${n}</a>`;}
-function fotoImg(src,mw,mh,nome,mime){if(!src)return"";if(isFotoImg(src,mime))return `<img src="${src}" alt="${_esc(nome||"Arquivo anexado")}" style="max-width:${mw}px;max-height:${mh}px;border-radius:8px;border:1px solid var(--linha);display:block;margin-bottom:8px;object-fit:contain">`;return arquivoLink(src,nome);}
+function fotoImg(src,mw,mh,nome,mime){if(!src)return"";if(isFotoImg(src,mime))return `<img src="${fotoSrc(src,mime)}" alt="${_esc(nome||"Arquivo anexado")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='${arquivoLink(src,nome).replace(/'/g,"&#39;")}'" style="max-width:${mw}px;max-height:${mh}px;border-radius:8px;border:1px solid var(--linha);display:block;margin-bottom:8px;object-fit:contain">`;return arquivoLink(src,nome);}
 async function uploadArquivoDrive(file,dataUrl){
   const res=await fetch("/api/uploads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:file.name,mimeType:file.type,dataUrl})});
   const json=await res.json().catch(()=>({}));
@@ -461,21 +470,14 @@ async function onFotoPick(e){
     const original=await fileDataUrl(f);
     const data=f.type&&f.type.startsWith("image/")?await resizeImgAsync(original,1200,0.84):original;
     const up=await uploadArquivoDrive(f,data);
-    window._formFoto=up.directUrl||up.viewUrl;
+    window._formFoto=up.imageUrl||up.directUrl||up.viewUrl;
     window._formArquivo={id:up.id,nome:up.name||f.name,mime:up.mimeType||f.type,url:window._formFoto,viewUrl:up.viewUrl};
     if(p)p.innerHTML=fotoImg(window._formFoto,160,120,window._formArquivo.nome,window._formArquivo.mime);
-    toast("Arquivo salvo no Google Drive.");
+    toast("Arquivo enviado ao Google Drive. Clique em Salvar para gravar no cadastro.");
   }catch(err){
-    if(f.type&&f.type.startsWith("image/")){
-      const original=await fileDataUrl(f);
-      const data=await resizeImgAsync(original,1000,0.82);
-      window._formFoto=data;window._formArquivo={nome:f.name,mime:f.type,url:data,viewUrl:""};
-      if(p)p.innerHTML=fotoImg(data,160,120,f.name,f.type);
-    }else{
-      window._formFoto="";window._formArquivo=null;
-      if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';
-    }
-    toast((err&&err.message?err.message:"Google Drive não configurado")+".");
+    window._formFoto="";window._formArquivo=null;
+    if(p)p.innerHTML='<div class="photo-box">Falha no envio. Tente novamente.</div>';
+    toast((err&&err.message?err.message:"Google Drive não configurado")+". A foto não foi vinculada ao cadastro.");
   }
 }
 function clearFoto(){window._formFoto="";window._formArquivo=null;const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';}

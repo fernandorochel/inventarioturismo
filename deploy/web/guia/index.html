@@ -282,10 +282,19 @@ function addressRow(endereco,link){
   return `<div class="row"><span class="ri">📍</span><span class="addr-wrap">${endereco}${mapLink}</span></div>`;
 }
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||/drive\.google\.com\/uc\?/i.test(src||"");}
+function driveIdFromUrl(src){
+  const s=String(src||"");
+  return (s.match(/drive\.google\.com\/file\/d\/([^/]+)/i)||s.match(/[?&]id=([^&]+)/i)||s.match(/drive\.google\.com\/(?:thumbnail|uc)\?[^#]*id=([^&]+)/i)||[])[1]||"";
+}
+function driveImageUrl(src){
+  const id=driveIdFromUrl(src);
+  return id?`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`:"";
+}
+function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||!!driveIdFromUrl(src);}
+function fotoSrc(src,mime){if(!src)return"";if(/^data:image\//i.test(src))return src;if(driveIdFromUrl(src))return driveImageUrl(src);return src;}
 function mediaBlock(r,nome){
   if(!r.foto)return"";
-  if(isFotoImg(r.foto,r.foto_mime))return `<div class="thumb"><img src="${r.foto}" alt="Foto de ${esc(nome)}" loading="lazy"></div>`;
+  if(isFotoImg(r.foto,r.foto_mime))return `<div class="thumb"><img src="${fotoSrc(r.foto,r.foto_mime)}" alt="Foto de ${esc(nome)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.thumb').outerHTML='<a class=&quot;file-link&quot; href=&quot;${esc(r.foto_view_url||r.foto)}&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>📎 ${esc(r.foto_nome||"Abrir arquivo")}</a>'"></div>`;
   return `<a class="file-link" href="${r.foto_view_url||r.foto}" target="_blank" rel="noopener">📎 ${esc(r.foto_nome||"Abrir arquivo")}</a>`;
 }
 function rodoviariaCard(){
