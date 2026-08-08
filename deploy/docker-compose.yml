@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: api/Dockerfile
       args:
-        APP_BUILD_VERSION: "2026-08-08-drive-fotos-v3"
+        APP_BUILD_VERSION: "2026-08-08-form-save-v4"
     restart: unless-stopped
     environment:
       DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo

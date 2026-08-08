@@ -1117,8 +1117,7 @@ function openForm(key,id){
     body+=`</div>`;
   });
   modal(`${id?"Editar":"Novo"} — ${m.label}`,body,
-    `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
-     <button class="btn btn-sm" onclick="saveForm('${key}','${id||""}')">Salvar</button>`);
+    `<button class="btn btn-sm" onclick="saveForm('${key}','${id||""}')">Salvar</button>`);
 }
 function saveForm(key,id){
   const m=MODMAP[key];const obj={};
@@ -1220,8 +1219,7 @@ function openSingleForm(view){
   cfg.sections.forEach(sec=>{body+=`<div class="form-sec">${sec.t}</div><div class="formgrid">`;
     sec.f.forEach(([fn,fl,t,optKey])=>{body+=fieldInput(cfg,fn,fl,t,optKey,r?r[fn]:"");});body+=`</div>`;});
   modal("Editar — "+cfg.label,body,
-    `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
-     <button class="btn btn-sm" onclick="saveSingle('${view}')">Salvar</button>`);
+    `<button class="btn btn-sm" onclick="saveSingle('${view}')">Salvar</button>`);
 }
 function saveSingle(view){
   const s=SINGLES[view];const cfg=s.cfg;const obj={};
@@ -1431,8 +1429,7 @@ function _userModal(idx,u){
       <option value="consulta" ${u.role==="consulta"?"selected":""}>Consulta (somente leitura)</option>
     </select></label>
   </div>`,
-  `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
-   <button class="btn btn-sm" onclick="_saveUser(${idx})">Salvar</button>`);
+  `<button class="btn btn-sm" onclick="_saveUser(${idx})">Salvar</button>`);
 }
 async function _saveUser(idx){
   const nome=document.getElementById("u_nome").value.trim();
@@ -1733,8 +1730,7 @@ function _openFestaMerito(id){
       <textarea id="ft_obs" class="inp" rows="2" placeholder="Observações opcionais...">${_esc(rec.observacoes||"")}</textarea>
     </label>
   </div>`,
-  `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
-   <button class="btn btn-sm" onclick="_salvarFestaMerito('${id||""}')">${id?"Salvar":"Adicionar"}</button>`);
+  `<button class="btn btn-sm" onclick="_salvarFestaMerito('${id||""}')">Salvar</button>`);
 }
 
 function _salvarFestaMerito(id){
@@ -1815,7 +1811,7 @@ function globalSearch(q){
   document.getElementById("main").innerHTML=h;currentView="_search";}
 
 /* ===== modal/toast ===== */
-function modal(title,body,footer){document.getElementById("modalRoot").innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="mh"><h3>${title}</h3><button class="x" onclick="closeModal()">×</button></div><div class="mb">${body}</div><div class="mf">${footer||""}</div></div></div>`;}
+function modal(title,body,footer){document.getElementById("modalRoot").innerHTML=`<div class="modal-bg"><div class="modal"><div class="mh"><h3>${title}</h3><button class="x" onclick="closeModal()" title="Fechar sem salvar">×</button></div><div class="mb">${body}</div><div class="mf">${footer||""}</div></div></div>`;}
 function closeModal(){document.getElementById("modalRoot").innerHTML="";}
 function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.getElementById("toastRoot").appendChild(t);setTimeout(()=>t.remove(),2200);}
 document.getElementById("senha").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
