@@ -442,6 +442,45 @@ MODULES.forEach(m=>{
 // ---- upload/preview de arquivo no armazenamento do sistema ----
 window._formFoto="";
 window._formArquivo=null;
+const FORM_GUARD={active:false,dirty:false,saving:false,saveFn:null};
+function markFormDirty(){if(FORM_GUARD.active&&!FORM_GUARD.saving)FORM_GUARD.dirty=true;}
+function clearFormGuard(){FORM_GUARD.active=false;FORM_GUARD.dirty=false;FORM_GUARD.saving=false;FORM_GUARD.saveFn=null;}
+function armFormGuard(saveFn){
+  FORM_GUARD.active=true;FORM_GUARD.dirty=false;FORM_GUARD.saving=false;FORM_GUARD.saveFn=saveFn||null;
+  const root=document.querySelector("#modalRoot .modal");
+  if(root){
+    root.addEventListener("input",markFormDirty);
+    root.addEventListener("change",markFormDirty);
+  }
+}
+function askUnsavedAction(opts){
+  if(document.getElementById("unsavedGuard"))return;
+  const box=document.createElement("div");
+  box.id="unsavedGuard";
+  box.className="modal-bg";
+  box.style.zIndex="9999";
+  box.innerHTML=`<div class="modal" style="max-width:460px">
+    <div class="mh"><h3>Alterações não salvas</h3></div>
+    <div class="mb"><p>Você alterou informações neste cadastro. Salve antes de sair ou escolha sair sem salvar.</p></div>
+    <div class="mf">
+      <button class="btn-sec btn-sm" id="guardCancel">Continuar editando</button>
+      <button class="btn-sec btn-sm" id="guardDiscard">Sair sem salvar</button>
+      <button class="btn btn-sm" id="guardSave">Salvar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(box);
+  const remove=()=>box.remove();
+  box.querySelector("#guardCancel").onclick=remove;
+  box.querySelector("#guardDiscard").onclick=()=>{remove();FORM_GUARD.dirty=false;if(opts&&opts.onDiscard)opts.onDiscard();};
+  box.querySelector("#guardSave").onclick=async()=>{
+    if(!FORM_GUARD.saveFn)return;
+    FORM_GUARD.saving=true;
+    box.querySelector("#guardSave").disabled=true;
+    box.querySelector("#guardSave").textContent="Salvando...";
+    try{await FORM_GUARD.saveFn();remove();if(opts&&opts.onSaved)opts.onSaved();}
+    finally{FORM_GUARD.saving=false;}
+  };
+}
 function resizeImg(src,max,q,cb){const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",q));}catch(e){cb(src);}};img.onerror=()=>cb(src);img.src=src;}
 function fileDataUrl(f){return new Promise((ok,fail)=>{const rd=new FileReader();rd.onload=e=>ok(e.target.result);rd.onerror=fail;rd.readAsDataURL(f);});}
 function resizeImgAsync(src,max,q){return new Promise(ok=>resizeImg(src,max,q,ok));}
@@ -477,6 +516,7 @@ async function uploadArquivoSistema(file,dataUrl){
 }
 async function onFotoPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
+  markFormDirty();
   const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Enviando para o sistema...</div>';
   try{
     const original=await fileDataUrl(f);
@@ -492,7 +532,7 @@ async function onFotoPick(e){
     toast((err&&err.message?err.message:"Falha no upload")+". A foto não foi vinculada ao cadastro.");
   }
 }
-function clearFoto(){window._formFoto="";window._formArquivo=null;const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';}
+function clearFoto(){markFormDirty();window._formFoto="";window._formArquivo=null;const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';}
 
 
 /* ===== Identificação do Município (registro único) ===== */
@@ -660,7 +700,15 @@ function setActive(k){document.querySelectorAll("nav.side a").forEach(a=>a.class
 /* ===== router ===== */
 function toggleSide(){var a=document.getElementById("side"),b=document.getElementById("sideOv");if(a)a.classList.toggle("open");if(b)b.classList.toggle("show");}
 function closeSide(){var a=document.getElementById("side"),b=document.getElementById("sideOv");if(a)a.classList.remove("open");if(b)b.classList.remove("show");}
-function go(view){currentView=view;setActive(view);closeSide();
+function go(view){
+  if(FORM_GUARD.active&&FORM_GUARD.dirty){
+    askUnsavedAction({
+      onDiscard:()=>{closeModal(true);go(view);},
+      onSaved:()=>{if(!FORM_GUARD.active)go(view);}
+    });
+    return;
+  }
+  currentView=view;setActive(view);closeSide();
   if(view==="dashboard")return renderDashboard();
   if(view==="exportar")return renderExport();
   if(view==="usuarios")return renderUsers();
@@ -830,7 +878,7 @@ function renderDashboard(){
   <!-- Top módulos + Donut de status -->
   <div class="dash-grid2">
     <div class="dash-panel">
-      <h3><span class="ph" style="background:#f5f3ff;color:#7c3aed"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Top módulos por registros <span class="see-all" onclick="setActive('exportar')">ver todos ↗</span></h3>
+      <h3><span class="ph" style="background:#f5f3ff;color:#7c3aed"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Top módulos por registros <span class="see-all" onclick="go('exportar')">ver todos ↗</span></h3>
       ${topMod.map(m=>`<div class="dash-bar-row">
         <span class="dash-bar-lbl">${m.icon||""} ${m.label}</span>
         <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${Math.round(m.n/topMax*100)}%"></div></div>
@@ -856,7 +904,7 @@ function renderDashboard(){
     <div class="dash-panel">
       <h3><span class="ph" style="background:#f0fdfa;color:#0f766e"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span> Navegação rápida por módulo</h3>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-        ${modGrid.map(m=>`<div class="mod-tile" onclick="setActive('${m.key}')">
+        ${modGrid.map(m=>`<div class="mod-tile" onclick="go('${m.key}')">
           <div class="mt-top"><span style="font-size:17px">${m.icon||"📌"}</span><span style="font-size:19px;font-weight:700;color:var(--azul-escuro)">${m.n}</span></div>
           <div class="mt-name">${m.label}</div>
           <div class="mt-prog"><div class="mt-prog-fill" style="width:${m.n>0?Math.max(10,Math.round(m.ativos/m.n*100)):0}%;background:${m.ativos===m.n&&m.n>0?'#1f9d55':'var(--azul-med)'}"></div></div>
@@ -1142,6 +1190,7 @@ function openForm(key,id){
   });
   modal(`${id?"Editar":"Novo"} — ${m.label}`,body,
     `<button class="btn btn-sm" onclick="saveForm('${key}','${id||""}')">Salvar</button>`);
+  armFormGuard(()=>saveForm(key,id||""));
 }
 async function saveForm(key,id){
   const m=MODMAP[key];const obj={};
@@ -1157,7 +1206,8 @@ async function saveForm(key,id){
   if(id){const i=DATA[key].findIndex(x=>x.id===id);DATA[key][i]={...DATA[key][i],...obj};}
   else{obj.id=key+"-"+Date.now();DATA[key].push(obj);}
   if(!(await saveData())){DATA=prev;return;}
-  logAudit(id?"Edição":"Criação",MODMAP[key]?MODMAP[key].label:key,obj.nome);closeModal();buildSidebar();setActive(key);renderModule(key);toast(id?"Registro atualizado":"Registro cadastrado");
+  FORM_GUARD.dirty=false;
+  logAudit(id?"Edição":"Criação",MODMAP[key]?MODMAP[key].label:key,obj.nome);closeModal(true);buildSidebar();setActive(key);renderModule(key);toast(id?"Registro atualizado":"Registro cadastrado");
 }
 function delRecord(key,id){if(!canEdit())return;const r=DATA[key].find(x=>x.id===id);
   modal("Excluir registro",`<p>Tem certeza que deseja excluir <b>${r.nome}</b>? Esta ação não pode ser desfeita.</p>`,
@@ -1246,12 +1296,13 @@ function openSingleForm(view){
     sec.f.forEach(([fn,fl,t,optKey])=>{body+=fieldInput(cfg,fn,fl,t,optKey,r?r[fn]:"");});body+=`</div>`;});
   modal("Editar — "+cfg.label,body,
     `<button class="btn btn-sm" onclick="saveSingle('${view}')">Salvar</button>`);
+  armFormGuard(()=>saveSingle(view));
 }
 async function saveSingle(view){
   const s=SINGLES[view];const cfg=s.cfg;const obj={};
   allFields(cfg).forEach(([fn,fl,t])=>{if(t==="photo")return;const el=document.getElementById("f_"+fn);if(el)obj[fn]=el.value.trim();});
   const prev=JSON.parse(JSON.stringify(DATA));
-  DATA[s.store]=obj;if(!(await saveData())){DATA=prev;return;}closeModal();renderSingleView(view);toast(cfg.label+" salva");
+  DATA[s.store]=obj;if(!(await saveData())){DATA=prev;return;}FORM_GUARD.dirty=false;closeModal(true);renderSingleView(view);toast(cfg.label+" salva");
 }
 
 /* ===== exportar ===== */
@@ -1758,6 +1809,7 @@ function _openFestaMerito(id){
     </label>
   </div>`,
   `<button class="btn btn-sm" onclick="_salvarFestaMerito('${id||""}')">Salvar</button>`);
+  armFormGuard(()=>_salvarFestaMerito(id||""));
 }
 
 async function _salvarFestaMerito(id){
@@ -1776,7 +1828,8 @@ async function _salvarFestaMerito(id){
   }
   if(!(await saveData())){DATA=prev;return;}
   logAudit(id?"Edição":"Criação","Festa do Trabalhador",nome);
-  closeModal();renderFestaTrabalhador();toast(id?"Indicação atualizada":"Indicação adicionada");
+  FORM_GUARD.dirty=false;
+  closeModal(true);renderFestaTrabalhador();toast(id?"Indicação atualizada":"Indicação adicionada");
 }
 
 function gerarListaFesta(){
@@ -1839,10 +1892,23 @@ function globalSearch(q){
   document.getElementById("main").innerHTML=h;currentView="_search";}
 
 /* ===== modal/toast ===== */
-function modal(title,body,footer){document.getElementById("modalRoot").innerHTML=`<div class="modal-bg"><div class="modal"><div class="mh"><h3>${title}</h3><button class="x" onclick="closeModal()" title="Fechar sem salvar">×</button></div><div class="mb">${body}</div><div class="mf">${footer||""}</div></div></div>`;}
-function closeModal(){document.getElementById("modalRoot").innerHTML="";}
+function modal(title,body,footer){clearFormGuard();document.getElementById("modalRoot").innerHTML=`<div class="modal-bg"><div class="modal"><div class="mh"><h3>${title}</h3><button class="x" onclick="closeModal()" title="Fechar">×</button></div><div class="mb">${body}</div><div class="mf">${footer||""}</div></div></div>`;}
+function closeModal(force){
+  if(!force&&FORM_GUARD.active&&FORM_GUARD.dirty){
+    askUnsavedAction({onDiscard:()=>closeModal(true)});
+    return;
+  }
+  document.getElementById("modalRoot").innerHTML="";
+  clearFormGuard();
+}
 function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.getElementById("toastRoot").appendChild(t);setTimeout(()=>t.remove(),2200);}
 document.getElementById("senha").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+window.addEventListener("beforeunload",e=>{
+  if(FORM_GUARD.active&&FORM_GUARD.dirty){
+    e.preventDefault();
+    e.returnValue="";
+  }
+});
 
 // ── Verificar sessão ativa ao carregar a página ──────────────────────────────
 (async function initApp(){
