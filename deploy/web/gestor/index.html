@@ -704,12 +704,14 @@ function renderDashboard(){
 
   /* ── alertas ── */
   const alertas=[];
-  if(pend>0)alertas.push({t:"warn",msg:`${pend} cadastro(s) pendente(s) ou em revisão`,rel:"pend"});
-  if(modSemReg>0)alertas.push({t:"warn",msg:`${modSemReg} módulo(s) sem nenhum registro`,rel:"semreg"});
+  if(pend>0)alertas.push({t:"warn",msg:`${pend} ${pend===1?"cadastro pendente":"cadastros pendentes"} ou em revisão`,rel:"pend"});
+  if(modSemReg>0)alertas.push({t:"warn",msg:`${modSemReg} ${modSemReg===1?"módulo sem cadastro":"módulos sem cadastro"}`,rel:"semreg"});
   const semFotoGuia=pendenciasFotoGuia().length;
-  if(semFotoGuia>0)alertas.push({t:"info",msg:`${semFotoGuia} cadastro(s) publicados no Guia sem foto`,rel:"semfoto"});
-  if(comResp<total)alertas.push({t:"info",msg:`${total-comResp} cadastro(s) sem responsável preenchido`,rel:"semresp"});
-  if(comDesc<total)alertas.push({t:"info",msg:`${total-comDesc} cadastro(s) sem descritivo`,rel:"semdesc"});
+  if(semFotoGuia>0)alertas.push({t:"info",msg:`${semFotoGuia} ${semFotoGuia===1?"cadastro publicado":"cadastros publicados"} no Guia sem foto`,rel:"semfoto"});
+  const semResp=total-comResp;
+  if(semResp>0)alertas.push({t:"info",msg:`${semResp} ${semResp===1?"cadastro sem responsável informado":"cadastros sem responsável informado"}`,rel:"semresp"});
+  const semDesc=total-comDesc;
+  if(semDesc>0)alertas.push({t:"info",msg:`${semDesc} ${semDesc===1?"cadastro sem descritivo":"cadastros sem descritivo"}`,rel:"semdesc"});
 
   /* ── feed recentes ── */
   const recent=[];MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>recent.push({mod:m.label,icon:m.icon,nome:r.nome||"(sem nome)",key:m.key,id:r.id,st:r.status||"Pendente"})));
@@ -1512,7 +1514,7 @@ function relatorioAlerta(tipo){
     titulo="📋 Módulos sem nenhum registro";
     if(!vazios.length){corpo='<p style="color:#065f46">Todos os módulos possuem pelo menos um registro.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${vazios.length} módulo(s)</b> sem nenhum cadastro.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${vazios.length} ${vazios.length===1?"módulo":"módulos"}</b> sem cadastro.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
@@ -1536,7 +1538,7 @@ function relatorioAlerta(tipo){
     const lista=pendenciasFotoGuia();
     if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros publicados no Guia possuem foto.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> publicados no Guia sem foto. Módulos internos e informativos sem exigência de imagem não entram nesta lista.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro publicado":"cadastros publicados"}</b> no Guia sem foto. Módulos internos e informativos sem exigência de imagem não entram nesta lista.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
@@ -1567,7 +1569,7 @@ function relatorioAlerta(tipo){
     }));
     if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros possuem responsável preenchido.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> com responsável ou telefone ausente.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro":"cadastros"}</b> com responsável ou telefone ausente.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
@@ -1601,7 +1603,7 @@ function relatorioAlerta(tipo){
     }));
     if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros possuem descritivo preenchido.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> sem descritivo preenchido.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro":"cadastros"}</b> sem descritivo preenchido.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
@@ -1630,7 +1632,7 @@ function relatorioAlerta(tipo){
     }));
     if(!lista.length){corpo='<p style="color:#065f46">Nenhum cadastro pendente.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} cadastro(s)</b> pendentes ou em revisão.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro pendente":"cadastros pendentes"}</b> ou em revisão.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
