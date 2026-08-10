@@ -455,8 +455,20 @@ function driveImageUrl(src){
 }
 function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||!!driveIdFromUrl(src);}
 function fotoSrc(src,mime){if(!src)return"";if(/^data:image\//i.test(src))return src;if(driveIdFromUrl(src))return driveImageUrl(src);return src;}
+function absMediaUrl(src){
+  const s=String(src||"").trim();
+  if(!s||/^(data:|blob:|https?:)/i.test(s))return s;
+  if(s.startsWith("/"))return location.origin+s;
+  return s;
+}
 function arquivoLink(src,nome){const n=_esc(nome||"Abrir arquivo");return `<a href="${src}" target="_blank" rel="noopener" class="btn-sec btn-sm" style="display:inline-flex;margin-bottom:8px">📎 ${n}</a>`;}
 function fotoImg(src,mw,mh,nome,mime){if(!src)return"";if(isFotoImg(src,mime))return `<img src="${fotoSrc(src,mime)}" alt="${_esc(nome||"Arquivo anexado")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='${arquivoLink(src,nome).replace(/'/g,"&#39;")}'" style="max-width:${mw}px;max-height:${mh}px;border-radius:8px;border:1px solid var(--linha);display:block;margin-bottom:8px;object-fit:contain">`;return arquivoLink(src,nome);}
+function fotoRelatorioImg(src,mw,mh,nome,mime){
+  if(!src)return"";
+  const href=absMediaUrl(fotoSrc(src,mime));
+  if(isFotoImg(src,mime))return `<img class="rec-img" src="${_esc(href)}" alt="${_esc(nome||"Arquivo anexado")}" loading="eager" decoding="sync" referrerpolicy="no-referrer" onerror="this.outerHTML='${arquivoLink(absMediaUrl(src),nome).replace(/'/g,"&#39;")}'" style="max-width:${mw}px;max-height:${mh}px">`;
+  return arquivoLink(absMediaUrl(src),nome);
+}
 async function uploadArquivoSistema(file,dataUrl){
   const res=await fetch("/api/uploads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:file.name,mimeType:file.type,dataUrl})});
   const json=await res.json().catch(()=>({}));
@@ -1317,7 +1329,7 @@ function _coletarRel(items,filtros){
         if(sec.t)body+=`<div class="sub">${_escR(sec.t)}</div>`;
         vals.forEach(([fn,fl])=>{body+=`<div class="row"><b>${_escR(fl)}:</b> ${_escR(r[fn])}</div>`;});
       });
-      if(r.foto)body+=`<div class="foto-label">📷 Arquivo</div>${fotoImg(r.foto,520,260,r.foto_nome,r.foto_mime)}`;
+      if(r.foto)body+=`<div class="foto-label">📷 Arquivo</div>${fotoRelatorioImg(r.foto,520,260,r.foto_nome,r.foto_mime)}`;
       body+=`</div>`;});
   });
   return {body,total};
