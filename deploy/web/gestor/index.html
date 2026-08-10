@@ -530,6 +530,7 @@ const MUNICIPIO={icon:"🏛️",label:"Identificação do Município",sections:[
 /* ===== estado ===== */
 const STORE_KEY="gti_preview_data_v4";
 let DATA={};
+let DATA_VERSION="";
 const APICULTORES_SEED=[{nome:"Apiários Andrade",categoria:"Mel",cnpj:"17.653.376/0001-06",responsavel:"Joel Santiago de Andrade",status:"Ativo",telefone:"(14) 99697-5852",redes:"@apiariosandrade (Instagram)",maps:"https://maps.app.goo.gl/GSg97fTdtpSFyDHJ7",horario:"Seg. a Sex. das 8h às 18h",end_principal:"Rua Padre Chirineia, 588",end_principal_bairro:"Centro"},
 {nome:"Apicuesta",categoria:"Mel",cnpj:"07.215.078/0001-72",status:"Ativo",telefone:"(14) 99649-1663",email:"aapc_apicultura@hotmail.com",end_principal:"Rua Manuel Carlos Paixão, 237",end_principal_bairro:"Centro",descricao:"Produção e venda de mel / Visitação apícola"},
 {nome:"Hidromel LM Rodrigues",categoria:"Derivados",responsavel:"Rosalina de Melo Rodrigues",status:"Ativo",telefone:"(14) 99698-6920 / (14) 99898-7228",email:"imrodrigues2015@gmail.com",end_principal:"Chácara Santa Luiza, Estrada Sabesp",end_principal_bairro:"Bairro Loa Lima, Crt 29513",descricao:"Produção de mel e vinho do mel"},
@@ -577,10 +578,11 @@ const DIST_TURISMO_INDUSTRIAL=[{"nome": "Seleon Biotecnologia", "status": "Ativo
 async function loadData(){
   try{
     const res=await fetch("/api/data");
-    if(!res.ok){DATA={};return;}
+    if(!res.ok){DATA={};DATA_VERSION="";return;}
     const json=await res.json();
     DATA=json.data||{};
-  }catch(e){DATA={};}
+    DATA_VERSION=json.version||"";
+  }catch(e){DATA={};DATA_VERSION="";}
   // Garantir estrutura dos módulos
   MODULES.forEach(m=>{if(!Array.isArray(DATA[m.key]))DATA[m.key]=[];});
   Object.keys(SINGLES).forEach(v=>{const st=SINGLES[v].store;if(!DATA[st]||typeof DATA[st]!=="object")DATA[st]=(v==="municipio"?{...MUNI_SEED}:{});});
@@ -590,8 +592,16 @@ async function loadData(){
 }
 async function saveData(){
   try{
-    await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data:DATA})});
-  }catch(e){console.error("Erro ao salvar:",e);}
+    const res=await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data:DATA,baseVersion:DATA_VERSION})});
+    const json=await res.json().catch(()=>({}));
+    if(res.status===409){
+      toast(json.error||"Os dados foram alterados em outro computador. Recarregue antes de salvar.");
+      return false;
+    }
+    if(!res.ok)throw new Error(json.error||"Erro ao salvar");
+    DATA_VERSION=json.version||DATA_VERSION;
+    return true;
+  }catch(e){console.error("Erro ao salvar:",e);toast("Não foi possível salvar. Verifique a conexão e tente novamente.");return false;}
 }
 function logAudit(acao,modulo,nome){
   fetch("/api/audit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({acao,modulo,nome:nome||"—"})}).catch(()=>{});
@@ -1133,7 +1143,7 @@ function openForm(key,id){
   modal(`${id?"Editar":"Novo"} — ${m.label}`,body,
     `<button class="btn btn-sm" onclick="saveForm('${key}','${id||""}')">Salvar</button>`);
 }
-function saveForm(key,id){
+async function saveForm(key,id){
   const m=MODMAP[key];const obj={};
   allFields(m).forEach(([fn,fl,t])=>{if(t==="photo")return;const el=document.getElementById("f_"+fn);if(el)obj[fn]=el.value.trim();});
   obj.foto=window._formFoto||"";
@@ -1143,15 +1153,17 @@ function saveForm(key,id){
   obj.foto_view_url=(window._formArquivo&&window._formArquivo.viewUrl)||"";
   if(!obj.nome){toast("Informe o nome.");return;}
   if(!obj.status)obj.status="Pendente";
+  const prev=JSON.parse(JSON.stringify(DATA));
   if(id){const i=DATA[key].findIndex(x=>x.id===id);DATA[key][i]={...DATA[key][i],...obj};}
   else{obj.id=key+"-"+Date.now();DATA[key].push(obj);}
-  logAudit(id?"Edição":"Criação",MODMAP[key]?MODMAP[key].label:key,obj.nome);saveData();closeModal();buildSidebar();setActive(key);renderModule(key);toast(id?"Registro atualizado":"Registro cadastrado");
+  if(!(await saveData())){DATA=prev;return;}
+  logAudit(id?"Edição":"Criação",MODMAP[key]?MODMAP[key].label:key,obj.nome);closeModal();buildSidebar();setActive(key);renderModule(key);toast(id?"Registro atualizado":"Registro cadastrado");
 }
 function delRecord(key,id){if(!canEdit())return;const r=DATA[key].find(x=>x.id===id);
   modal("Excluir registro",`<p>Tem certeza que deseja excluir <b>${r.nome}</b>? Esta ação não pode ser desfeita.</p>`,
    `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
     <button class="btn btn-sm" style="background:var(--vermelho)" onclick="confirmDel('${key}','${id}')">Excluir</button>`);}
-function confirmDel(key,id){const r=(DATA[key]||[]).find(x=>x.id===id);logAudit("Exclusão",MODMAP[key]?MODMAP[key].label:key,r?r.nome:"—");DATA[key]=DATA[key].filter(x=>x.id!==id);saveData();closeModal();buildSidebar();setActive(key);renderModule(key);toast("Registro excluído");}
+async function confirmDel(key,id){const r=(DATA[key]||[]).find(x=>x.id===id);const prev=JSON.parse(JSON.stringify(DATA));DATA[key]=DATA[key].filter(x=>x.id!==id);if(!(await saveData())){DATA=prev;return;}logAudit("Exclusão",MODMAP[key]?MODMAP[key].label:key,r?r.nome:"—");closeModal();buildSidebar();setActive(key);renderModule(key);toast("Registro excluído");}
 
 /* ===== Fichas de registro único (Município / Caracterização Turística) ===== */
 const CARACTUR={icon:"🧭",label:"Caracterização do Município em Turismo",sections:[
@@ -1235,10 +1247,11 @@ function openSingleForm(view){
   modal("Editar — "+cfg.label,body,
     `<button class="btn btn-sm" onclick="saveSingle('${view}')">Salvar</button>`);
 }
-function saveSingle(view){
+async function saveSingle(view){
   const s=SINGLES[view];const cfg=s.cfg;const obj={};
   allFields(cfg).forEach(([fn,fl,t])=>{if(t==="photo")return;const el=document.getElementById("f_"+fn);if(el)obj[fn]=el.value.trim();});
-  DATA[s.store]=obj;saveData();closeModal();renderSingleView(view);toast(cfg.label+" salva");
+  const prev=JSON.parse(JSON.stringify(DATA));
+  DATA[s.store]=obj;if(!(await saveData())){DATA=prev;return;}closeModal();renderSingleView(view);toast(cfg.label+" salva");
 }
 
 /* ===== exportar ===== */
@@ -1747,22 +1760,23 @@ function _openFestaMerito(id){
   `<button class="btn btn-sm" onclick="_salvarFestaMerito('${id||""}')">Salvar</button>`);
 }
 
-function _salvarFestaMerito(id){
+async function _salvarFestaMerito(id){
   const nome=document.getElementById("ft_nome").value.trim();
   const hom=document.getElementById("ft_homenageado").value.trim();
   const cargo=document.getElementById("ft_cargo").value.trim();
   const obs=document.getElementById("ft_obs").value.trim();
   if(!nome||!hom){toast("Informe a empresa e o homenageado.");return;}
+  const prev=JSON.parse(JSON.stringify(DATA));
   if(!DATA.festa_trabalhador)DATA.festa_trabalhador=[];
   if(id){
     const i=DATA.festa_trabalhador.findIndex(r=>r.id===id);
     if(i>=0)DATA.festa_trabalhador[i]={...DATA.festa_trabalhador[i],nome,homenageado:hom,cargo,observacoes:obs};
-    logAudit("Edição","Festa do Trabalhador",nome);
   }else{
     DATA.festa_trabalhador.push({id:"festa-"+Date.now(),nome,homenageado:hom,cargo,observacoes:obs,publicar_guia:"Não"});
-    logAudit("Criação","Festa do Trabalhador",nome);
   }
-  saveData();closeModal();renderFestaTrabalhador();toast(id?"Indicação atualizada":"Indicação adicionada");
+  if(!(await saveData())){DATA=prev;return;}
+  logAudit(id?"Edição":"Criação","Festa do Trabalhador",nome);
+  closeModal();renderFestaTrabalhador();toast(id?"Indicação atualizada":"Indicação adicionada");
 }
 
 function gerarListaFesta(){

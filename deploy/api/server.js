@@ -369,19 +369,44 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
 // ── INVENTÁRIO ───────────────────────────────────────────────
 app.get("/api/data", requireAuth, async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT data FROM inventory WHERE id=1");
-    res.json({ data: rows[0]?.data || {} });
+    const { rows } = await pool.query(`
+      SELECT data, to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS version
+      FROM inventory WHERE id=1
+    `);
+    res.json({ data: rows[0]?.data || {}, version: rows[0]?.version || "" });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro ao carregar dados" }); }
 });
 
 app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
   try {
-    const { data } = req.body;
-    await pool.query(`
+    const { data, baseVersion } = req.body;
+    const payload = JSON.stringify(data);
+    const versionExpr = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+
+    if (baseVersion) {
+      const updated = await pool.query(`
+        UPDATE inventory
+        SET data = $1::jsonb, updated_at = now()
+        WHERE id = 1 AND ${versionExpr} = $2
+        RETURNING ${versionExpr} AS version
+      `, [payload, baseVersion]);
+      if (updated.rows.length) return res.json({ ok: true, version: updated.rows[0].version });
+
+      const current = await pool.query(`SELECT ${versionExpr} AS version FROM inventory WHERE id=1`);
+      if (current.rows.length) {
+        return res.status(409).json({
+          error: "Os dados foram alterados em outro computador. Recarregue o sistema antes de salvar novamente.",
+          version: current.rows[0].version
+        });
+      }
+    }
+
+    const inserted = await pool.query(`
       INSERT INTO inventory (id, data, updated_at) VALUES (1, $1::jsonb, now())
       ON CONFLICT (id) DO UPDATE SET data = $1::jsonb, updated_at = now()
-    `, [JSON.stringify(data)]);
-    res.json({ ok: true });
+      RETURNING ${versionExpr} AS version
+    `, [payload]);
+    res.json({ ok: true, version: inserted.rows[0].version });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro ao salvar dados" }); }
 });
 
