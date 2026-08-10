@@ -223,7 +223,9 @@ function renderGrid(filter){
 }
 function fieldRow(icon,val,href){
   if(!val)return"";
-  const v=href?`<a href="${href}" target="_blank" rel="noopener">${val}</a>`:val;
+  const safeVal=esc(val);
+  const safeHref=href?esc(href):"";
+  const v=href?`<a href="${safeHref}" target="_blank" rel="noopener">${safeVal}</a>`:safeVal;
   return `<div class="row"><span class="ri">${icon}</span><span>${v}</span></div>`;
 }
 function phoneDigits(t){
@@ -245,7 +247,7 @@ function phoneRow(val,extra){
   if(!phone)return"";
   const call=telHref(val||extra);
   const wa=whatsHref(extra||val);
-  const phoneLink=call?`<a href="${call}" target="_blank" rel="noopener">${phone}</a>`:phone;
+  const phoneLink=call?`<a href="${esc(call)}" target="_blank" rel="noopener">${esc(phone)}</a>`:esc(phone);
   const waLink=wa?`<a class="wa-btn" href="${wa}" target="_blank" rel="noopener" title="Falar pelo WhatsApp" aria-label="Falar pelo WhatsApp">💬</a>`:"";
   return `<div class="row"><span class="ri">📞</span><span class="phone-wrap">${phoneLink}${waLink}</span></div>`;
 }
@@ -280,10 +282,16 @@ function mapsHref(endereco,link){
 function addressRow(endereco,link){
   if(!endereco)return"";
   const href=mapsHref(endereco,link);
-  const mapLink=href?`<a class="maps-btn" href="${href}" target="_blank" rel="noopener" title="Abrir no Google Maps" aria-label="Abrir no Google Maps">🗺️ Maps</a>`:"";
-  return `<div class="row"><span class="ri">📍</span><span class="addr-wrap">${endereco}${mapLink}</span></div>`;
+  const mapLink=href?`<a class="maps-btn" href="${esc(href)}" target="_blank" rel="noopener" title="Abrir no Google Maps" aria-label="Abrir no Google Maps">🗺️ Maps</a>`:"";
+  return `<div class="row"><span class="ri">📍</span><span class="addr-wrap">${esc(endereco)}${mapLink}</span></div>`;
 }
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function cleanPublicText(value){
+  const text=String(value||"").trim();
+  if(!text)return"";
+  if(/<\s*(div|img|script|style|iframe|a)\b/i.test(text))return"";
+  return text.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+}
 function driveIdFromUrl(src){
   const s=String(src||"");
   return (s.match(/drive\.google\.com\/file\/d\/([^/]+)/i)||s.match(/[?&]id=([^&]+)/i)||s.match(/drive\.google\.com\/(?:thumbnail|uc)\?[^#]*id=([^&]+)/i)||[])[1]||"";
@@ -347,8 +355,8 @@ function guiaCardFields(r){
   const redes=firstValue(r,["instagram","redes","site_email","rede_social","redes_sociais","site_rede_social"]);
   const mapas=firstValue(r,["maps","link_maps","google_maps","mapa","link_google_maps"]);
   const horario=firstValue(r,["horario","funcionamento","horario_atendimento"]);
-  const produtos=firstValue(r,["produtos_servicos","produtos","principais_produtos","caracteristicas","principais_pratos","servicos","atividade"]);
-  const descricao=firstValue(r,["descricao","descritivo","acessivel_desc","observacoes"]);
+  const produtos=cleanPublicText(firstValue(r,["produtos_servicos","produtos","principais_produtos","caracteristicas","principais_pratos","servicos","atividade"]));
+  const descricao=cleanPublicText(firstValue(r,["descricao","descritivo","acessivel_desc","observacoes"]));
   return {nome,responsavel,endereco,telefone,whatsapp,email,site,redes,mapas,horario,produtos,descricao};
 }
 function _semPrefixo(t){return String(t||"").replace(/^\s*Seg\.\s*a\s*Sex\.\s*[—\-–]\s*/i,"").replace(/^\s*(Ida|Volta)\s*:\s*/i,"").trim();}
@@ -367,7 +375,7 @@ function onibusCard(r){
     <h3>🚌 ${nome}</h3>
     ${r.empresa?`<span class="tag" style="background:var(--azul-principal)">${r.empresa}</span>`:""}
     ${tabela}
-    ${r.observacoes?`<div class="desc">${r.observacoes}</div>`:""}
+    ${cleanPublicText(r.observacoes)?`<div class="desc">${esc(cleanPublicText(r.observacoes))}</div>`:""}
   </div>`;
 }
 function openCat(key){
@@ -392,9 +400,9 @@ function openCat(key){
       const siteUrl=siteHref(site);
       const insta=f.redes||site;
       return `<div class="item">
-        <h3>${nome}</h3>
+        <h3>${esc(nome)}</h3>
         ${mediaBlock(r,nome)}
-        ${r.categoria?`<span class="tag" style="background:${color}">${r.categoria}</span>`:""}
+        ${r.categoria?`<span class="tag" style="background:${color}">${esc(r.categoria)}</span>`:""}
         ${f.responsavel&&f.responsavel!==nome?fieldRow("👤",f.responsavel):""}
         ${addressRow(f.endereco,f.mapas)}
         ${phoneRow(f.telefone,f.whatsapp)}
@@ -403,7 +411,7 @@ function openCat(key){
         ${instagramRow(insta)}
         ${fieldRow("🕒",f.horario)}
         ${fieldRow("🛍️",f.produtos)}
-        ${f.descricao?`<div class="desc">${f.descricao}</div>`:""}
+        ${f.descricao?`<div class="desc">${esc(f.descricao)}</div>`:""}
       </div>`;}).join("")|| '<div class="empty" style="grid-column:1/-1">Sem locais nesta categoria ainda.</div>';
   }
   dl.innerHTML=aviso+body;
