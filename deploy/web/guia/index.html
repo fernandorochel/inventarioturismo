@@ -320,6 +320,28 @@ function rodoviariaCard(){
     ${instagramRow(info.instagram||info.redes||site)}
   </div>`;
 }
+function firstValue(obj,fields){
+  for(const f of fields){
+    const v=obj&&obj[f];
+    if(v!==undefined&&v!==null&&String(v).trim())return v;
+  }
+  return "";
+}
+function guiaCardFields(r){
+  const nome=firstValue(r,["nome","nome_fantasia","artesao_nome","razao_social"])||"(sem nome)";
+  const responsavel=firstValue(r,["responsavel","artesao_nome","proprietario","contato_nome"]);
+  const endereco=firstValue(r,["endereco","artesao_endereco","local_endereco","ponto_atuacao","end_principal","logradouro"]);
+  const telefone=firstValue(r,["telefone","telefones","artesao_telefone","celular","whatsapp","contato"]);
+  const whatsapp=firstValue(r,["whatsapp","celular","artesao_telefone","telefone"]);
+  const email=firstValue(r,["email","artesao_email"]);
+  const site=firstValue(r,["site","website","url"]);
+  const redes=firstValue(r,["instagram","redes","site_email","rede_social","redes_sociais","site_rede_social"]);
+  const mapas=firstValue(r,["maps","link_maps","google_maps","mapa","link_google_maps"]);
+  const horario=firstValue(r,["horario","funcionamento","horario_atendimento"]);
+  const produtos=firstValue(r,["produtos_servicos","produtos","principais_produtos","caracteristicas","principais_pratos","servicos","atividade"]);
+  const descricao=firstValue(r,["descricao","descritivo","acessivel_desc","observacoes"]);
+  return {nome,responsavel,endereco,telefone,whatsapp,email,site,redes,mapas,horario,produtos,descricao};
+}
 function _semPrefixo(t){return String(t||"").replace(/^\s*Seg\.\s*a\s*Sex\.\s*[—\-–]\s*/i,"").replace(/^\s*(Ida|Volta)\s*:\s*/i,"").trim();}
 function onibusCard(r){
   const nome=r.nome||"(linha sem nome)";
@@ -355,21 +377,24 @@ function openCat(key){
     body=rodoviariaCard()+(items.length?items.map(onibusCard).join(""):'<div class="empty" style="grid-column:1/-1">Sem linhas cadastradas.</div>');
   } else {
     body=items.map(r=>{
-      const nome=r.nome||r.artesao_nome||"(sem nome)";
-      const site=r.site||r.website||r.url;
+      const f=guiaCardFields(r);
+      const nome=f.nome;
+      const site=f.site;
       const siteUrl=siteHref(site);
-      const insta=r.instagram||r.redes||site;
+      const insta=f.redes||site;
       return `<div class="item">
         <h3>${nome}</h3>
         ${mediaBlock(r,nome)}
         ${r.categoria?`<span class="tag" style="background:${color}">${r.categoria}</span>`:""}
-        ${addressRow(r.endereco,r.maps||r.link_maps||r.google_maps)}
-        ${phoneRow(r.telefone||r.telefones,r.whatsapp||r.celular)}
-        ${fieldRow("✉️",r.email,r.email?("mailto:"+r.email):null)}
+        ${f.responsavel&&f.responsavel!==nome?fieldRow("👤",f.responsavel):""}
+        ${addressRow(f.endereco,f.mapas)}
+        ${phoneRow(f.telefone,f.whatsapp)}
+        ${fieldRow("✉️",f.email,f.email?("mailto:"+f.email):null)}
         ${siteUrl?fieldRow("🌐",site,siteUrl):""}
         ${instagramRow(insta)}
-        ${fieldRow("🕒",r.horario||r.funcionamento)}
-        ${r.descricao?`<div class="desc">${r.descricao}</div>`:""}
+        ${fieldRow("🕒",f.horario)}
+        ${fieldRow("🛍️",f.produtos)}
+        ${f.descricao?`<div class="desc">${f.descricao}</div>`:""}
       </div>`;}).join("")|| '<div class="empty" style="grid-column:1/-1">Sem locais nesta categoria ainda.</div>';
   }
   dl.innerHTML=aviso+body;
