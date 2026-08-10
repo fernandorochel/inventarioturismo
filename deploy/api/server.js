@@ -434,6 +434,43 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
   }
 });
 
+function firstPublicValue(record, fields) {
+  for (const field of fields) {
+    const value = record?.[field];
+    if (value !== undefined && value !== null && String(value).trim()) return value;
+  }
+  return "";
+}
+
+function instagramUrlFromText(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const url = text.match(/https?:\/\/(?:www\.)?instagram\.com\/([A-Za-z0-9._]+)/i);
+  if (url) return `https://www.instagram.com/${url[1]}/`;
+  const at = text.match(/@([A-Za-z0-9._]+)/);
+  if (at) return `https://www.instagram.com/${at[1]}/`;
+  return "";
+}
+
+function normalizePublicRecord(record) {
+  if (!record || typeof record !== "object") return record;
+  const out = { ...record };
+  const endereco = firstPublicValue(out, ["endereco", "artesao_endereco", "local_endereco", "ponto_atuacao", "end_principal"]);
+  const telefone = firstPublicValue(out, ["telefone", "telefones", "artesao_telefone", "celular", "whatsapp", "contato"]);
+  const redes = firstPublicValue(out, ["instagram", "redes", "site_email", "rede_social", "redes_sociais", "site_rede_social"]);
+  const produtos = firstPublicValue(out, ["produtos_servicos", "produtos", "principais_produtos", "caracteristicas", "principais_pratos", "servicos", "atividade"]);
+  const descricao = firstPublicValue(out, ["descricao", "descritivo", "acessivel_desc", "observacoes"]);
+  const instagram = instagramUrlFromText(redes);
+
+  if (endereco && !out.endereco) out.endereco = endereco;
+  if (telefone && !out.telefone) out.telefone = telefone;
+  if (instagram && !out.instagram) out.instagram = instagram;
+  if (instagram && !out.site) out.site = instagram;
+  if (produtos && !out.produtos_servicos) out.produtos_servicos = produtos;
+  if (produtos && !descricao) out.descricao = `Produtos: ${produtos}`;
+  return out;
+}
+
 // Rota pública: só publicar_guia=Sim e não Inativo
 app.get("/api/public", async (req, res) => {
   try {
@@ -447,7 +484,7 @@ app.get("/api/public", async (req, res) => {
       if (!Array.isArray(value)) { pub[key] = value; continue; }
       pub[key] = value.filter(r =>
         r.publicar_guia === "Sim" && (!r.status || r.status !== "Inativo")
-      );
+      ).map(normalizePublicRecord);
     }
     res.json({ data: pub });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro" }); }
