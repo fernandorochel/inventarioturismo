@@ -1846,6 +1846,11 @@ document.getElementById("senha").addEventListener("keydown",e=>{if(e.key==="Ente
 
 // ── Verificar sessão ativa ao carregar a página ──────────────────────────────
 (async function initApp(){
+  if(location.protocol==="file:"){
+    document.getElementById("loginErr").textContent="Abra pelo endereço online: https://inventario.turismoitatinga.com.br/gestor/";
+    toast("Este arquivo local não salva no sistema online.");
+    return;
+  }
   try{
     const res=await fetch("/api/auth/me");
     if(res.ok){
@@ -1855,7 +1860,9 @@ document.getElementById("senha").addEventListener("keydown",e=>{if(e.key==="Ente
       await loadUsers();
       _showApp();
     }
-  }catch(e){}
+  }catch(e){
+    document.getElementById("loginErr").textContent="Sem conexão com o servidor online. Os dados não serão salvos neste dispositivo.";
+  }
 })();
 </script>
 </body>
