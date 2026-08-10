@@ -117,6 +117,14 @@ app.use(express.static(path.join(__dirname, "..", "web"), {
   }
 }));
 
+const uploadDir = process.env.FILE_UPLOAD_DIR || path.join(__dirname, "..", "uploads");
+const uploadPublicPath = process.env.FILE_UPLOAD_PUBLIC_PATH || "/uploads";
+fs.mkdirSync(uploadDir, { recursive: true });
+app.use(uploadPublicPath, express.static(uploadDir, {
+  immutable: true,
+  maxAge: "30d"
+}));
+
 // ── Guards ───────────────────────────────────────────────────
 function requireAuth(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: "Não autenticado" });
@@ -146,8 +154,36 @@ function cleanFileName(name, mimeType) {
   const fallbackExt = mimeType === "application/pdf" ? ".pdf" : ".jpg";
   const safe = String(name || ("upload-" + Date.now() + fallbackExt))
     .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
     .trim();
   return safe || ("upload-" + Date.now() + fallbackExt);
+}
+
+async function uploadToLocalStorage({ fileName, mimeType, buffer }) {
+  const ext = mimeType === "application/pdf"
+    ? ".pdf"
+    : mimeType === "image/png"
+      ? ".png"
+      : mimeType === "image/webp"
+        ? ".webp"
+        : mimeType === "image/gif"
+          ? ".gif"
+          : ".jpg";
+  const baseName = path.basename(cleanFileName(fileName, mimeType), path.extname(fileName || ""));
+  const id = crypto.randomBytes(10).toString("hex");
+  const finalName = `${Date.now()}-${id}-${baseName || "arquivo"}${ext}`;
+  const finalPath = path.join(uploadDir, finalName);
+  await fs.promises.writeFile(finalPath, buffer, { flag: "wx" });
+  const publicUrl = `${uploadPublicPath.replace(/\/$/, "")}/${encodeURIComponent(finalName)}`;
+  return {
+    id: `local:${finalName}`,
+    name: finalName,
+    viewUrl: publicUrl,
+    imageUrl: /^image\//i.test(mimeType) ? publicUrl : "",
+    downloadUrl: publicUrl,
+    directUrl: publicUrl,
+    storage: "local"
+  };
 }
 
 async function getDriveAccessToken() {
@@ -353,13 +389,15 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
   try {
     const { fileName, dataUrl } = req.body;
     const parsed = parseDataUrl(dataUrl);
-    const allowed = /^image\/(png|jpe?g|webp|gif)$/i.test(parsed.mimeType) || parsed.mimeType === "application/pdf";
+    const isImage = /^image\/(png|jpe?g|webp|gif)$/i.test(parsed.mimeType);
+    const allowed = isImage || parsed.mimeType === "application/pdf";
     if (!allowed) return res.status(400).json({ error: "Envie uma imagem ou PDF" });
-    if (parsed.buffer.length > 25 * 1024 * 1024) {
-      return res.status(400).json({ error: "Arquivo muito grande. Limite: 25 MB" });
+    const maxBytes = isImage ? 4 * 1024 * 1024 : 25 * 1024 * 1024;
+    if (parsed.buffer.length > maxBytes) {
+      return res.status(400).json({ error: isImage ? "Imagem muito grande. Limite: 4 MB" : "Arquivo muito grande. Limite: 25 MB" });
     }
 
-    const file = await uploadToDrive({
+    const file = await uploadToLocalStorage({
       fileName: cleanFileName(fileName, parsed.mimeType),
       mimeType: parsed.mimeType,
       buffer: parsed.buffer

@@ -439,7 +439,7 @@ MODULES.forEach(m=>{
   if(!allFields(m).some(f=>f[0].includes("acess"))) m.sections.push({t:"Acessibilidade",f:[["acessivel","Possui acessibilidade?","sel","simnao"],["acessivel_desc","Descrição do nível de acessibilidade","area"]]});
   if(!allFields(m).some(f=>f[0]==="foto")) m.sections.push({t:"Imagem",f:[["foto","Foto","photo"]]});
 });
-// ---- upload/preview de arquivo no Google Drive ----
+// ---- upload/preview de arquivo no armazenamento do sistema ----
 window._formFoto="";
 window._formArquivo=null;
 function resizeImg(src,max,q,cb){const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",q));}catch(e){cb(src);}};img.onerror=()=>cb(src);img.src=src;}
@@ -457,7 +457,7 @@ function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i
 function fotoSrc(src,mime){if(!src)return"";if(/^data:image\//i.test(src))return src;if(driveIdFromUrl(src))return driveImageUrl(src);return src;}
 function arquivoLink(src,nome){const n=_esc(nome||"Abrir arquivo");return `<a href="${src}" target="_blank" rel="noopener" class="btn-sec btn-sm" style="display:inline-flex;margin-bottom:8px">📎 ${n}</a>`;}
 function fotoImg(src,mw,mh,nome,mime){if(!src)return"";if(isFotoImg(src,mime))return `<img src="${fotoSrc(src,mime)}" alt="${_esc(nome||"Arquivo anexado")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='${arquivoLink(src,nome).replace(/'/g,"&#39;")}'" style="max-width:${mw}px;max-height:${mh}px;border-radius:8px;border:1px solid var(--linha);display:block;margin-bottom:8px;object-fit:contain">`;return arquivoLink(src,nome);}
-async function uploadArquivoDrive(file,dataUrl){
+async function uploadArquivoSistema(file,dataUrl){
   const res=await fetch("/api/uploads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:file.name,mimeType:file.type,dataUrl})});
   const json=await res.json().catch(()=>({}));
   if(!res.ok)throw new Error(json.error||"Erro ao enviar arquivo");
@@ -465,19 +465,19 @@ async function uploadArquivoDrive(file,dataUrl){
 }
 async function onFotoPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
-  const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Enviando para o Google Drive...</div>';
+  const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Enviando para o sistema...</div>';
   try{
     const original=await fileDataUrl(f);
     const data=f.type&&f.type.startsWith("image/")?await resizeImgAsync(original,1200,0.84):original;
-    const up=await uploadArquivoDrive(f,data);
+    const up=await uploadArquivoSistema(f,data);
     window._formFoto=up.imageUrl||up.directUrl||up.viewUrl;
     window._formArquivo={id:up.id,nome:up.name||f.name,mime:up.mimeType||f.type,url:window._formFoto,viewUrl:up.viewUrl};
     if(p)p.innerHTML=fotoImg(window._formFoto,160,120,window._formArquivo.nome,window._formArquivo.mime);
-    toast("Arquivo enviado ao Google Drive. Clique em Salvar para gravar no cadastro.");
+    toast("Arquivo enviado ao sistema. Clique em Salvar para gravar no cadastro.");
   }catch(err){
     window._formFoto="";window._formArquivo=null;
     if(p)p.innerHTML='<div class="photo-box">Falha no envio. Tente novamente.</div>';
-    toast((err&&err.message?err.message:"Google Drive não configurado")+". A foto não foi vinculada ao cadastro.");
+    toast((err&&err.message?err.message:"Falha no upload")+". A foto não foi vinculada ao cadastro.");
   }
 }
 function clearFoto(){window._formFoto="";window._formArquivo=null;const p=document.getElementById("fotoPrev");if(p)p.innerHTML='<div class="photo-box">Nenhum arquivo anexado</div>';}

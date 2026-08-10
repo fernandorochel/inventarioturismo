@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: api/Dockerfile
       args:
-        APP_BUILD_VERSION: "2026-08-08-form-save-v4"
+        APP_BUILD_VERSION: "2026-08-10-local-uploads-v5"
     restart: unless-stopped
     environment:
       DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo
@@ -41,6 +41,10 @@ services:
       GOOGLE_OAUTH_CLIENT_SECRET:    ${GOOGLE_OAUTH_CLIENT_SECRET:-}
       GOOGLE_OAUTH_REFRESH_TOKEN:    ${GOOGLE_OAUTH_REFRESH_TOKEN:-}
       GOOGLE_DRIVE_UPLOAD_PUBLIC:    ${GOOGLE_DRIVE_UPLOAD_PUBLIC:-false}
+      FILE_UPLOAD_DIR:               /app/uploads
+      FILE_UPLOAD_PUBLIC_PATH:       /uploads
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,6 +56,7 @@ services:
           - turismo-itatinga-inventario
 volumes:
   postgres_data:
+  uploads_data:
 
 networks:
   easypanel:
