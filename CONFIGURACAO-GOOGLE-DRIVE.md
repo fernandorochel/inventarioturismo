@@ -31,8 +31,15 @@ GOOGLE_OAUTH_CLIENT_ID=
 GOOGLE_OAUTH_CLIENT_SECRET=
 GOOGLE_OAUTH_REFRESH_TOKEN=
 GOOGLE_DRIVE_UPLOAD_PUBLIC=false
+GOOGLE_DRIVE_UPLOAD_PUBLIC_IMAGES=true
+GOOGLE_DRIVE_USE_TYPE_FOLDERS=true
 ```
 
-Com `GOOGLE_DRIVE_UPLOAD_PUBLIC=false`, os arquivos permanecem privados no Drive. O sistema salva o link interno do arquivo no cadastro.
+Com `GOOGLE_DRIVE_UPLOAD_PUBLIC=false`, PDFs e documentos permanecem privados no Drive. Com `GOOGLE_DRIVE_UPLOAD_PUBLIC_IMAGES=true`, as imagens dos cadastros ficam visíveis no Guia da Cidade.
 
-Observacao: arquivos privados do Drive nao aparecem publicamente para visitantes anonimos no Guia. Para imagens aparecerem no Guia publico, seria necessario publicar imagens especificas ou usar outro armazenamento publico controlado.
+Com `GOOGLE_DRIVE_USE_TYPE_FOLDERS=true`, o sistema organiza automaticamente:
+
+- imagens em `01 - Imagens dos Cadastros`;
+- PDFs em `02 - Documentos dos Cadastros`.
+
+Observacao: arquivos privados do Drive nao aparecem publicamente para visitantes anonimos no Guia. Por isso, as imagens dos cadastros devem ficar liberadas por link, enquanto documentos internos, como ATAs do COMTUR, devem permanecer privados.

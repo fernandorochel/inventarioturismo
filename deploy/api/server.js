@@ -143,6 +143,7 @@ function requireAdmin(req, res, next) {
 
 // ── Google Drive uploads ────────────────────────────────────
 let driveTokenCache = { token: null, exp: 0 };
+const driveFolderCache = new Map();
 
 function parseDataUrl(dataUrl) {
   const m = /^data:([^;,]+);base64,(.+)$/i.exec(String(dataUrl || ""));
@@ -220,6 +221,69 @@ async function getDriveAccessToken() {
   return driveTokenCache.token;
 }
 
+function escapeDriveQueryValue(value) {
+  return String(value || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+function driveTypeFolderName(mimeType) {
+  if (/^image\//i.test(mimeType)) return "01 - Imagens dos Cadastros";
+  if (mimeType === "application/pdf") return "02 - Documentos dos Cadastros";
+  return "";
+}
+
+async function findOrCreateDriveFolder({ accessToken, parentId, name }) {
+  const cacheKey = `${parentId}:${name}`;
+  if (driveFolderCache.has(cacheKey)) return driveFolderCache.get(cacheKey);
+
+  const query = [
+    "mimeType = 'application/vnd.google-apps.folder'",
+    "trashed = false",
+    `name = '${escapeDriveQueryValue(name)}'`,
+    `'${escapeDriveQueryValue(parentId)}' in parents`
+  ].join(" and ");
+  const searchUrl = "https://www.googleapis.com/drive/v3/files?" + new URLSearchParams({
+    q: query,
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+    fields: "files(id,name)"
+  });
+  const searchRes = await fetch(searchUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  const searchJson = await searchRes.json().catch(() => ({}));
+  if (!searchRes.ok) {
+    const err = new Error(searchJson.error?.message || "Falha ao localizar pasta no Google Drive");
+    err.status = 502;
+    throw err;
+  }
+  const found = Array.isArray(searchJson.files) ? searchJson.files[0] : null;
+  if (found?.id) {
+    driveFolderCache.set(cacheKey, found.id);
+    return found.id;
+  }
+
+  const createRes = await fetch("https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id,name", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name,
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [parentId]
+    })
+  });
+  const created = await createRes.json().catch(() => ({}));
+  if (!createRes.ok) {
+    const err = new Error(created.error?.message || "Falha ao criar pasta no Google Drive");
+    err.status = 502;
+    throw err;
+  }
+  driveFolderCache.set(cacheKey, created.id);
+  return created.id;
+}
+
 async function uploadToDrive({ fileName, mimeType, buffer }) {
   const folderId = process.env.GOOGLE_DRIVE_UPLOAD_FOLDER_ID;
   if (!folderId) {
@@ -229,10 +293,15 @@ async function uploadToDrive({ fileName, mimeType, buffer }) {
   }
 
   const accessToken = await getDriveAccessToken();
+  const typeFolderName = driveTypeFolderName(mimeType);
+  const useTypeFolders = process.env.GOOGLE_DRIVE_USE_TYPE_FOLDERS !== "false";
+  const parentFolderId = useTypeFolders && typeFolderName
+    ? await findOrCreateDriveFolder({ accessToken, parentId: folderId, name: typeFolderName })
+    : folderId;
   const boundary = "gti-" + crypto.randomBytes(12).toString("hex");
   const metadata = {
     name: fileName,
-    parents: [folderId]
+    parents: [parentFolderId]
   };
   const body = Buffer.concat([
     Buffer.from(
@@ -260,7 +329,9 @@ async function uploadToDrive({ fileName, mimeType, buffer }) {
     throw err;
   }
 
-  const isPublicUpload = process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true";
+  const isImageUpload = /^image\//i.test(mimeType);
+  const isPublicUpload = process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC === "true" ||
+    (isImageUpload && process.env.GOOGLE_DRIVE_UPLOAD_PUBLIC_IMAGES !== "false");
   if (isPublicUpload) {
     const permissionRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions?supportsAllDrives=true`, {
       method: "POST",
@@ -286,8 +357,20 @@ async function uploadToDrive({ fileName, mimeType, buffer }) {
     viewUrl,
     imageUrl,
     downloadUrl,
-    directUrl: isPublicUpload ? imageUrl : (file.webContentLink || viewUrl)
+    directUrl: isPublicUpload ? imageUrl : (file.webContentLink || viewUrl),
+    storage: "drive",
+    folderId: parentFolderId,
+    folderName: typeFolderName || ""
   };
+}
+
+function hasDriveUploadConfig() {
+  return Boolean(
+    process.env.GOOGLE_DRIVE_UPLOAD_FOLDER_ID ||
+    process.env.GOOGLE_OAUTH_CLIENT_ID ||
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET ||
+    process.env.GOOGLE_OAUTH_REFRESH_TOKEN
+  );
 }
 
 // ── Criação automática das tabelas ───────────────────────────
@@ -422,11 +505,21 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
       return res.status(400).json({ error: isImage ? "Imagem muito grande. Limite: 4 MB" : "Arquivo muito grande. Limite: 25 MB" });
     }
 
-    const file = await uploadToLocalStorage({
-      fileName: cleanFileName(fileName, parsed.mimeType),
-      mimeType: parsed.mimeType,
-      buffer: parsed.buffer
-    });
+    let file;
+    const safeName = cleanFileName(fileName, parsed.mimeType);
+    if (hasDriveUploadConfig()) {
+      file = await uploadToDrive({
+        fileName: safeName,
+        mimeType: parsed.mimeType,
+        buffer: parsed.buffer
+      });
+    } else {
+      file = await uploadToLocalStorage({
+        fileName: safeName,
+        mimeType: parsed.mimeType,
+        buffer: parsed.buffer
+      });
+    }
     res.json({ file: { ...file, mimeType: parsed.mimeType } });
   } catch (e) {
     console.error("Erro no upload:", e.message);
