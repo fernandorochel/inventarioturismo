@@ -1109,6 +1109,43 @@ function cellValue(m,r,col){const v=r[col];
   if(col==="categoria")return `<span class="tag">${v||"—"}</span>`;
   if(col==="status")return `<span class="pill ${pillClass(v)}">${v||"—"}</span>`;
   return v?String(v):"—";}
+const DEMANDA_EXPORT_COLS=[
+  ["codigo_pesquisa","Código"],["arquivo_origem","Arquivo fonte"],["evento_local_coleta","Evento/local da coleta"],["data_coleta","Data"],["aplicador","Aplicador(a)"],["forma_aplicacao","Forma de aplicação"],
+  ["idade","Q1 - Idade"],["genero","Q2 - Gênero"],["cor_raca","Q3 - Cor/raça"],["escolaridade","Q4 - Escolaridade"],["ocupacao","Q5 - Ocupação principal"],["renda_familiar","Q6 - Renda familiar mensal"],
+  ["cidade_residencia","Q7 - Cidade"],["uf","Q7 - UF"],["tipo_respondente","Q8 - Respondendo como"],["motivo_visita","Q9 - Motivo principal"],["evento_atrativo_motivador","Q10 - Evento/atrativo/local motivador"],
+  ["primeira_vez_itatinga","Q11 - Primeira vez em Itatinga?"],["visitas_ultimos_12_meses","Q12 - Visitas nos últimos 12 meses"],["com_quem_viajou","Q13 - Com quem viajou"],["tamanho_grupo","Q14 - Tamanho do grupo"],
+  ["pcd_mobilidade_grupo","Q15 - Necessidade de acessibilidade no grupo"],["transporte","Q16 - Transporte"],["hospedagem","Q17 - Hospedagem"],["noites","Q18 - Noites"],
+  ["eventos_visitados","Q19 - Eventos visitados/participados"],["atrativos_visitados","Q20 - Atrativos/equipamentos/locais visitados"],["canais_divulgacao","Q21 - Como soube"],
+  ["informacoes_suficientes","Q22 - Divulgação/sinalização/informações"],["gasto_aproximado","Q23 - Gasto aproximado"],["itens_gasto","Q24 - Itens em que realizou gastos"],
+  ["visitou_outras_cidades","Q25 - Visitou outras cidades?"],["quais_outras_cidades","Q25 - Quais cidades"],["mais_gostou","Q26 - O que mais gostou"],["faria_retornar","Q27 - O que faria retornar"],
+  ["sugestao_critica_comentario","Q28 - Sugestão/crítica/comentário"],["avaliacao_organizacao","AV1 - Organização geral"],["avaliacao_limpeza","AV2 - Limpeza"],["avaliacao_seguranca","AV3 - Segurança"],
+  ["avaliacao_alimentacao","AV4 - Alimentação/restaurantes/praça de alimentação"],["avaliacao_banheiros","AV5 - Banheiros/estrutura de apoio"],["avaliacao_acessibilidade","AV6 - Acessibilidade"],["avaliacao_estacionamento","AV7 - Estacionamento"],
+  ["avaliacao_hospitalidade","AV8 - Hospitalidade/atendimento"],["avaliacao_atrativos_naturais","AV9 - Atrativos naturais"],["avaliacao_atrativos_culturais_eventos","AV10 - Atrativos culturais/históricos/eventos"],
+  ["probabilidade_retornar","PR1 - Probabilidade de retornar"],["probabilidade_indicar","PR2 - Probabilidade de indicar"],["observacoes_transcricao","Observações de transcrição"]
+];
+function renderDemandaExportCard(visiveis,total){
+  return `<div class="cards" style="margin:0 0 16px">
+    <div class="stat" style="border-color:#2563B0;grid-column:span 2">
+      <div class="ic">📊</div><div class="v" style="font-size:18px">${total}</div><div class="l">questionários no banco · ${visiveis} visível(is) no filtro</div>
+    </div>
+    <div class="stat" style="cursor:pointer;border-color:#16a34a" onclick="exportarDemandaTuristica()">
+      <div class="ic">⬇️</div><div class="v" style="font-size:14px">Exportar tudo</div><div class="l">Planilha Excel completa</div>
+    </div>
+  </div>`;
+}
+function _csvCell(v){return `"${String(v??"").replace(/"/g,'""')}"`;}
+function exportarDemandaTuristica(){
+  const recs=(DATA.demanda_turistica||[]).slice().sort((a,b)=>String(a.codigo_pesquisa||"").localeCompare(String(b.codigo_pesquisa||""),"pt",{numeric:true}));
+  if(!recs.length)return toast("Nenhum questionário de Demanda Turística para exportar.");
+  const linhas=[DEMANDA_EXPORT_COLS.map(c=>_csvCell(c[1])).join(";")];
+  recs.forEach(r=>linhas.push(DEMANDA_EXPORT_COLS.map(([k])=>_csvCell(r[k])).join(";")));
+  const blob=new Blob(["\ufeff"+linhas.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="demanda-turistica-itatinga-questionarios-completos.csv";
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+  toast("Planilha da Demanda Turística gerada ("+recs.length+" questionários).");
+}
 function renderModule(key){
   const m=MODMAP[key];const f=filterState[key]||{q:"",cat:"",st:""};filterState[key]=f;
   let rows=(DATA[key]||[]).filter(r=>{
@@ -1122,6 +1159,7 @@ function renderModule(key){
   ${key==="horarios_onibus"?'<div class="note">⚠️ <b>Aviso:</b> A Diretoria de Turismo apenas <b>compartilha</b> estes horários como cortesia. Eles são definidos pelas empresas de transporte e <b>podem sofrer alterações sem aviso prévio</b>. A Diretoria não se responsabiliza por mudanças — confirme sempre com a empresa responsável.</div>':''}
   <div class="page-head"><div><h2>${m.icon} ${m.label}</h2><p>${rows.length} de ${(DATA[key]||[]).length} registro(s) · ${allFields(m).length} campos por ficha</p></div>
     ${canEdit()?`<button class="btn btn-sm" onclick="openForm('${key}')">+ Novo registro</button>`:""}</div>
+  ${key==="demanda_turistica"?renderDemandaExportCard(rows.length,(DATA[key]||[]).length):""}
   <div class="toolbar">
     <input class="grow" placeholder="Buscar..." value="${f.q}" oninput="setFilter('${key}','q',this.value)">
     <select onchange="setFilter('${key}','cat',this.value)"><option value="">Todas as categorias</option>${catOpts}</select>
