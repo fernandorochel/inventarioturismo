@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: api/Dockerfile
       args:
-        APP_BUILD_VERSION: "2026-08-11-data-sync-v1"
+        APP_BUILD_VERSION: "2026-08-11-data-cache-v1"
     restart: unless-stopped
     environment:
       DATABASE_URL:   postgres://turismo:${DB_PASSWORD}@postgres:5432/turismo

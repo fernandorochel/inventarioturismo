@@ -452,6 +452,7 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
 // ── INVENTÁRIO ───────────────────────────────────────────────
 app.get("/api/data", requireAuth, async (req, res) => {
   try {
+    noStore(res);
     const { rows } = await pool.query(`
       SELECT data, to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS version
       FROM inventory WHERE id=1

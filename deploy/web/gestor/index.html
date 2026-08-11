@@ -617,7 +617,7 @@ const DIST_ARQ_RELIGIOSA=[{"nome": "Paróquia São João Batista (Matriz)", "sta
 const DIST_TURISMO_INDUSTRIAL=[{"nome": "Seleon Biotecnologia", "status": "Ativo", "endereco": "Estrada Manoel Rodrigues de Barros, KM 8,5", "telefone": "(14) 3014-9144 / (14) 99612-7451", "descricao": "Horário: Com horário agendado"}];
 async function loadData(){
   try{
-    const res=await fetch("/api/data");
+    const res=await fetch("/api/data?ts="+Date.now(),{cache:"no-store"});
     if(!res.ok){DATA={};DATA_VERSION="";return;}
     const json=await res.json();
     DATA=json.data||{};
