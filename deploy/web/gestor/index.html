@@ -631,6 +631,10 @@ async function loadData(){
   MODULES.forEach(m=>{(DATA[m.key]||[]).forEach(r=>{if(r&&typeof r==="object"&&(r.publicar_guia===undefined||r.publicar_guia===null||r.publicar_guia===""))r.publicar_guia=internos.has(m.key)?"Não":"Sim";});});
 }
 async function saveData(){
+  if(!DATA_VERSION){
+    toast("Recarregue o sistema antes de salvar. A tela não está sincronizada com o banco.");
+    return false;
+  }
   try{
     const res=await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data:DATA,baseVersion:DATA_VERSION})});
     const json=await res.json().catch(()=>({}));

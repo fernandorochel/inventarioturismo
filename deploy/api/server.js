@@ -465,6 +465,14 @@ app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
     const { data, baseVersion } = req.body;
     const payload = JSON.stringify(data);
     const versionExpr = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+    const current = await pool.query(`SELECT ${versionExpr} AS version FROM inventory WHERE id=1`);
+
+    if (current.rows.length && !baseVersion) {
+      return res.status(409).json({
+        error: "Recarregue o sistema antes de salvar. Esta tela está sem sincronização com o banco de dados.",
+        version: current.rows[0].version
+      });
+    }
 
     if (baseVersion) {
       const updated = await pool.query(`
@@ -475,7 +483,6 @@ app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
       `, [payload, baseVersion]);
       if (updated.rows.length) return res.json({ ok: true, version: updated.rows[0].version });
 
-      const current = await pool.query(`SELECT ${versionExpr} AS version FROM inventory WHERE id=1`);
       if (current.rows.length) {
         return res.status(409).json({
           error: "Os dados foram alterados em outro computador. Recarregue o sistema antes de salvar novamente.",
