@@ -172,24 +172,29 @@ async function optimizeImageUpload({ fileName, mimeType, buffer }) {
   if (!sharp) return { fileName, mimeType, buffer, optimized: false };
 
   const baseName = path.basename(cleanFileName(fileName, mimeType), path.extname(fileName || ""));
-  const optimized = await sharp(buffer, { failOn: "none", animated: false })
-    .rotate()
-    .resize({
-      width: 1600,
-      height: 1600,
-      fit: "inside",
-      withoutEnlargement: true
-    })
-    .webp({ quality: 78, effort: 4 })
-    .toBuffer();
+  try {
+    const optimized = await sharp(buffer, { failOn: "none", animated: false })
+      .rotate()
+      .resize({
+        width: 1600,
+        height: 1600,
+        fit: "inside",
+        withoutEnlargement: true
+      })
+      .webp({ quality: 78, effort: 4 })
+      .toBuffer();
 
-  return {
-    fileName: `${baseName || "imagem"}.webp`,
-    mimeType: "image/webp",
-    buffer: optimized,
-    optimized: true,
-    originalBytes: buffer.length
-  };
+    return {
+      fileName: `${baseName || "imagem"}.webp`,
+      mimeType: "image/webp",
+      buffer: optimized,
+      optimized: true,
+      originalBytes: buffer.length
+    };
+  } catch (e) {
+    console.warn("Não foi possível otimizar imagem; salvando original:", e.message);
+    return { fileName: cleanFileName(fileName, mimeType), mimeType, buffer, optimized: false, originalBytes: buffer.length };
+  }
 }
 
 async function uploadToLocalStorage({ fileName, mimeType, buffer }) {
