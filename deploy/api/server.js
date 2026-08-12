@@ -93,6 +93,7 @@ function enhanceGuiaHtml(html) {
 }
 
 function noStore(res) {
+  res.set("X-App-Build", process.env.APP_BUILD_VERSION || "dev");
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
