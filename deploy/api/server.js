@@ -12,6 +12,12 @@ const PgSession  = require("connect-pg-simple")(session);
 const path       = require("path");
 const crypto     = require("crypto");
 const fs         = require("fs");
+let sharp = null;
+try {
+  sharp = require("sharp");
+} catch (e) {
+  console.warn("Sharp indisponível; uploads de imagem serão salvos sem otimização no servidor.");
+}
 
 const app  = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -158,6 +164,31 @@ function cleanFileName(name, mimeType) {
     .replace(/\s+/g, "-")
     .trim();
   return safe || ("upload-" + Date.now() + fallbackExt);
+}
+
+async function optimizeImageUpload({ fileName, mimeType, buffer }) {
+  if (!/^image\//i.test(mimeType)) return { fileName, mimeType, buffer, optimized: false };
+  if (!sharp) return { fileName, mimeType, buffer, optimized: false };
+
+  const baseName = path.basename(cleanFileName(fileName, mimeType), path.extname(fileName || ""));
+  const optimized = await sharp(buffer, { failOn: "none", animated: false })
+    .rotate()
+    .resize({
+      width: 1600,
+      height: 1600,
+      fit: "inside",
+      withoutEnlargement: true
+    })
+    .webp({ quality: 78, effort: 4 })
+    .toBuffer();
+
+  return {
+    fileName: `${baseName || "imagem"}.webp`,
+    mimeType: "image/webp",
+    buffer: optimized,
+    optimized: true,
+    originalBytes: buffer.length
+  };
 }
 
 async function uploadToLocalStorage({ fileName, mimeType, buffer }) {
@@ -508,27 +539,38 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
     const isImage = /^image\/(png|jpe?g|webp|gif)$/i.test(parsed.mimeType);
     const allowed = isImage || parsed.mimeType === "application/pdf";
     if (!allowed) return res.status(400).json({ error: "Envie uma imagem ou PDF" });
-    const maxBytes = isImage ? 4 * 1024 * 1024 : 25 * 1024 * 1024;
+    const maxBytes = isImage ? 20 * 1024 * 1024 : 25 * 1024 * 1024;
     if (parsed.buffer.length > maxBytes) {
-      return res.status(400).json({ error: isImage ? "Imagem muito grande. Limite: 4 MB" : "Arquivo muito grande. Limite: 25 MB" });
+      return res.status(400).json({ error: isImage ? "Imagem muito grande. Limite: 20 MB" : "Arquivo muito grande. Limite: 25 MB" });
     }
 
-    let file;
-    const safeName = cleanFileName(fileName, parsed.mimeType);
-    if (hasDriveUploadConfig()) {
-      file = await uploadToDrive({
-        fileName: safeName,
-        mimeType: parsed.mimeType,
-        buffer: parsed.buffer
-      });
-    } else {
-      file = await uploadToLocalStorage({
-        fileName: safeName,
-        mimeType: parsed.mimeType,
-        buffer: parsed.buffer
-      });
+    const prepared = isImage
+      ? await optimizeImageUpload({
+          fileName: cleanFileName(fileName, parsed.mimeType),
+          mimeType: parsed.mimeType,
+          buffer: parsed.buffer
+        })
+      : { fileName: cleanFileName(fileName, parsed.mimeType), mimeType: parsed.mimeType, buffer: parsed.buffer, optimized: false };
+
+    if (isImage && prepared.buffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: "Imagem otimizada ainda ficou muito grande. Tente outra foto menor." });
     }
-    res.json({ file: { ...file, mimeType: parsed.mimeType } });
+
+    const file = await uploadToLocalStorage({
+      fileName: prepared.fileName,
+      mimeType: prepared.mimeType,
+      buffer: prepared.buffer
+    });
+    res.json({
+      file: {
+        ...file,
+        mimeType: prepared.mimeType,
+        originalMimeType: parsed.mimeType,
+        optimized: Boolean(prepared.optimized),
+        originalBytes: prepared.originalBytes || parsed.buffer.length,
+        storedBytes: prepared.buffer.length
+      }
+    });
   } catch (e) {
     console.error("Erro no upload:", e.message);
     res.status(e.status || 500).json({ error: e.message || "Erro ao enviar arquivo" });
