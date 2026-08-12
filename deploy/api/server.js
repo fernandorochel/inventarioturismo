@@ -712,8 +712,9 @@ app.get("/api/audit", requireAuth, async (req, res) => {
 // ── Health ───────────────────────────────────────────────────
 app.get("/api/health", async (req, res) => {
   try {
+    noStore(res);
     await pool.query("SELECT 1");
-    res.json({ ok: true, ts: new Date().toISOString() });
+    res.json({ ok: true, build: process.env.APP_BUILD_VERSION || "dev", ts: new Date().toISOString() });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
