@@ -18,24 +18,29 @@
       --branco:#FFFFFF;
       --radius-card:16px;
       --radius-btn:10px;
-      --shadow-card:0 8px 24px rgba(11,99,182,.10);
+      --shadow-card:0 16px 38px rgba(6,47,95,.10);
     }
     *{box-sizing:border-box}
     body{
       margin:0;
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       color:var(--texto-principal);
-      background:var(--cinza-fundo);
+      background:
+        linear-gradient(180deg,#FFFFFF 0 130px,transparent 130px),
+        linear-gradient(135deg,rgba(11,99,182,.08) 0 18%,transparent 18% 100%),
+        linear-gradient(315deg,rgba(102,201,67,.10) 0 16%,transparent 16% 100%),
+        var(--cinza-fundo);
     }
     header{
-      background:var(--branco);
+      background:rgba(255,255,255,.94);
       border-bottom:1px solid var(--cinza-borda);
       position:sticky;
       top:0;
       z-index:10;
+      backdrop-filter:saturate(140%) blur(10px);
     }
     .topbar{
-      width:min(1120px,calc(100% - 32px));
+      width:min(1180px,calc(100% - 32px));
       margin:0 auto;
       display:flex;
       align-items:center;
@@ -64,19 +69,138 @@
       font-size:.9rem;
       white-space:nowrap;
     }
+    .status-chip::before{
+      content:"";
+      width:10px;
+      height:10px;
+      border-radius:3px;
+      background:var(--verde-natureza);
+      box-shadow:14px 0 0 var(--amarelo-mel),28px 0 0 var(--laranja-eventos);
+      margin-right:28px;
+      flex:0 0 auto;
+    }
     main{
-      width:min(1120px,calc(100% - 32px));
+      width:min(1180px,calc(100% - 32px));
       margin:28px auto 40px;
       display:grid;
-      grid-template-columns:minmax(0,1fr) 340px;
+      grid-template-columns:minmax(0,1fr) 360px;
       gap:24px;
       align-items:start;
     }
-    .panel,.side{
+    .intro,.panel,.side{
       background:var(--branco);
       border:1px solid var(--cinza-borda);
       border-radius:var(--radius-card);
       box-shadow:var(--shadow-card);
+    }
+    .intro{
+      grid-column:1/-1;
+      overflow:hidden;
+      display:grid;
+      grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);
+      min-height:260px;
+    }
+    .intro-copy{padding:34px 34px 30px}
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      color:var(--azul-escuro);
+      font-weight:900;
+      font-size:.82rem;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      margin-bottom:14px;
+    }
+    .eyebrow::before{
+      content:"";
+      width:42px;
+      height:6px;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--azul-principal),var(--verde-natureza),var(--amarelo-mel),var(--laranja-eventos));
+    }
+    .intro-visual{
+      position:relative;
+      min-height:260px;
+      background:
+        linear-gradient(135deg,rgba(6,47,95,.96),rgba(11,99,182,.88) 54%,rgba(16,168,232,.82)),
+        var(--azul-principal);
+      color:#fff;
+      padding:28px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      overflow:hidden;
+    }
+    .intro-visual::before{
+      content:"";
+      position:absolute;
+      inset:auto -70px -130px -40px;
+      height:220px;
+      background:
+        linear-gradient(135deg,transparent 0 18%,var(--verde-natureza) 18% 30%,transparent 30%),
+        linear-gradient(18deg,transparent 0 42%,var(--laranja-eventos) 42% 50%,transparent 50%),
+        linear-gradient(8deg,transparent 0 55%,var(--amarelo-mel) 55% 61%,transparent 61%);
+      opacity:.95;
+    }
+    .route{
+      position:absolute;
+      inset:26px 26px auto auto;
+      width:150px;
+      height:72px;
+      border-top:2px dashed rgba(255,255,255,.76);
+      border-radius:50%;
+      transform:rotate(-8deg);
+    }
+    .bee{
+      position:absolute;
+      top:36px;
+      right:42px;
+      width:28px;
+      height:18px;
+      border-radius:50%;
+      background:linear-gradient(90deg,var(--amarelo-mel) 0 32%,#111 32% 48%,var(--amarelo-mel) 48% 70%,#111 70%);
+      transform:rotate(-20deg);
+      box-shadow:0 -10px 0 -5px rgba(255,255,255,.86),0 10px 0 -5px rgba(255,255,255,.86);
+    }
+    .visual-title{
+      position:relative;
+      font-size:1.05rem;
+      font-weight:900;
+      line-height:1.35;
+      max-width:250px;
+    }
+    .visual-card{
+      position:relative;
+      align-self:flex-start;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:14px;
+      padding:14px;
+      max-width:270px;
+      backdrop-filter:blur(8px);
+      font-size:.92rem;
+      line-height:1.4;
+    }
+    .color-strip{
+      height:7px;
+      display:grid;
+      grid-template-columns:1.4fr 1fr 1fr .8fr .8fr .45fr;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:24px;
+    }
+    .color-strip span:nth-child(1){background:var(--azul-principal)}
+    .color-strip span:nth-child(2){background:#10A8E8}
+    .color-strip span:nth-child(3){background:#43B649}
+    .color-strip span:nth-child(4){background:var(--verde-natureza)}
+    .color-strip span:nth-child(5){background:var(--laranja-eventos)}
+    .color-strip span:nth-child(6){background:#E52420}
+    .section-title{
+      margin:0 0 18px;
+      color:var(--azul-escuro);
+      font-size:1.18rem;
+      line-height:1.2;
     }
     .panel{padding:28px}
     .side{padding:22px;position:sticky;top:96px}
@@ -104,7 +228,7 @@
       padding:12px 13px;
       font:inherit;
       color:var(--texto-principal);
-      background:#fff;
+      background:#FBFCFE;
       outline:none;
     }
     textarea{min-height:110px;resize:vertical}
@@ -113,10 +237,12 @@
       box-shadow:0 0 0 3px rgba(11,99,182,.14);
     }
     .upload-box{
-      border:2px dashed #B7C7DA;
-      border-radius:14px;
+      border:2px dashed rgba(11,99,182,.36);
+      border-radius:16px;
       padding:18px;
-      background:#F9FBFE;
+      background:
+        linear-gradient(135deg,rgba(16,168,232,.08),rgba(102,201,67,.08)),
+        #F9FBFE;
       display:grid;
       grid-template-columns:160px 1fr;
       gap:18px;
@@ -164,7 +290,7 @@
       min-height:46px;
     }
     .btn-primary{background:var(--azul-principal);color:#fff}
-    .btn-primary:hover{background:#084F95}
+    .btn-primary:hover{background:#084F95;transform:translateY(-1px)}
     .btn-primary:disabled{background:#9AB7D4;cursor:not-allowed}
     .btn-ghost{background:#EEF5FC;color:var(--azul-escuro)}
     .notice{
@@ -192,6 +318,25 @@
       font-size:.82rem;
       font-weight:900;
     }
+    .topic-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      padding-top:18px;
+      margin-top:18px;
+      border-top:1px solid var(--cinza-borda);
+    }
+    .topic-tags span{
+      border-radius:999px;
+      padding:8px 10px;
+      font-size:.8rem;
+      font-weight:800;
+      color:#fff;
+    }
+    .topic-tags span:nth-child(1){background:var(--azul-principal)}
+    .topic-tags span:nth-child(2){background:var(--verde-natureza)}
+    .topic-tags span:nth-child(3){background:var(--laranja-eventos)}
+    .topic-tags span:nth-child(4){background:var(--amarelo-mel);color:var(--azul-escuro)}
     .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
     footer{
       background:var(--azul-escuro);
@@ -201,6 +346,8 @@
       font-size:.9rem;
     }
     @media (max-width:900px){
+      .intro{grid-template-columns:1fr}
+      .intro-visual{min-height:220px}
       main{grid-template-columns:1fr}
       .side{position:static}
     }
@@ -230,9 +377,23 @@
   </header>
 
   <main>
-    <section class="panel" aria-labelledby="titulo">
-      <h1 id="titulo">Cadastro de estabelecimento ou atrativo</h1>
-      <p class="lead">Preencha as informações principais e envie uma foto da fachada. O cadastro será analisado antes de entrar no sistema e antes de qualquer publicação no Guia da Cidade.</p>
+    <section class="intro" aria-labelledby="titulo">
+      <div class="intro-copy">
+        <div class="eyebrow">Inventário Turístico Municipal</div>
+        <h1 id="titulo">Cadastro de estabelecimento ou atrativo</h1>
+        <p class="lead">Preencha as informações principais e envie uma foto atual da fachada. O cadastro será analisado pela Diretoria de Turismo antes de entrar no sistema e antes de qualquer publicação no Guia da Cidade.</p>
+        <div class="color-strip" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="intro-visual" aria-hidden="true">
+        <div class="route"></div>
+        <div class="bee"></div>
+        <div class="visual-title">Itatinga: natureza, mel, eventos, cultura e experiências no interior paulista.</div>
+        <div class="visual-card">Envio público com foto obrigatória da fachada e revisão institucional antes da publicação.</div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Formulário de cadastro">
+      <h2 class="section-title">Dados para cadastro</h2>
 
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
@@ -320,7 +481,7 @@
 
           <div class="field full">
             <label for="observacoes">Observações</label>
-            <textarea id="observacoes" name="observacoes" maxlength="1600" placeholder="Informações complementares para a equipe do turismo."></textarea>
+            <textarea id="observacoes" name="observacoes" maxlength="1600" placeholder="Informações complementares para a Diretoria de Turismo."></textarea>
           </div>
 
           <div class="field full">
@@ -346,12 +507,18 @@
     </section>
 
     <aside class="side" aria-label="Orientações">
-      <h2>Como funciona</h2>
+      <h2>Fluxo do cadastro</h2>
       <ul>
         <li><span class="dot">1</span><span><b>Envio:</b> a empresa informa os dados e anexa a foto da fachada.</span></li>
         <li><span class="dot">2</span><span><b>Análise:</b> o cadastro entra como pendente no inventário.</span></li>
-        <li><span class="dot">3</span><span><b>Publicação:</b> a equipe decide se o item será publicado no Guia da Cidade.</span></li>
+        <li><span class="dot">3</span><span><b>Publicação:</b> a Diretoria de Turismo decide se o item será publicado no Guia da Cidade.</span></li>
       </ul>
+      <div class="topic-tags" aria-label="Temas do turismo">
+        <span>Eventos</span>
+        <span>Rural</span>
+        <span>Comércio</span>
+        <span>Cidade do Mel</span>
+      </div>
     </aside>
   </main>
 
@@ -519,7 +686,7 @@
         if (!saveRes.ok) throw new Error(saveJson.error || "Não foi possível salvar o cadastro.");
 
         form.reset();
-        showNotice("ok", `Cadastro enviado com sucesso. Protocolo: <strong>${saveJson.protocolo}</strong>. Ele ficará pendente para análise da equipe.`);
+        showNotice("ok", `Cadastro enviado com sucesso. Protocolo: <strong>${saveJson.protocolo}</strong>. Ele ficará pendente para análise da Diretoria de Turismo.`);
       } catch (error) {
         showNotice("err", error.message || "Não foi possível enviar o cadastro.");
       } finally {
