@@ -117,6 +117,15 @@ app.get(["/gestor", "/gestor/", "/gestor/index.html"], (req, res, next) => {
   });
 });
 
+app.get(["/cadastro", "/cadastro/", "/cadastro/index.html"], (req, res, next) => {
+  const cadastroPath = path.join(__dirname, "..", "web", "cadastro", "index.html");
+  fs.readFile(cadastroPath, "utf8", (err, html) => {
+    if (err) return next(err);
+    noStore(res);
+    res.type("html").send(html);
+  });
+});
+
 // Serve os arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, "..", "web"), {
   setHeaders(res, filePath) {
@@ -410,6 +419,81 @@ function hasDriveUploadConfig() {
   );
 }
 
+const PUBLIC_CADASTRO_MODULES = Object.freeze({
+  hospedagem: "Meios de Hospedagem",
+  restaurantes: "Restaurantes, Pastelarias, Pizzarias e Lanchonetes",
+  bares: "Bares",
+  cafeterias: "Cafeterias",
+  estruturas_eventos: "Estruturas para Eventos",
+  empresas_eventos: "Organizadoras de Eventos",
+  parques_naturais: "Parques Naturais",
+  outros_naturais: "Outros Atrativos Naturais",
+  conjunto_arq: "Conjunto Arquitetônico",
+  lugares_fe: "Lugares de Manifestações de Fé",
+  arq_religiosa: "Arquitetura Religiosa",
+  marcos_historicos: "Marcos Históricos",
+  lugares_cultura: "Lugares de Cultura",
+  eventos: "Eventos",
+  artesanato: "Artesanato/Trabalhos Manuais",
+  confeitaria_artesanal: "Confeitaria Artesanal",
+  trailers_alimentacao: "Trailers de Alimentação",
+  vendedores_ambulantes: "Vendedores Ambulantes",
+  empresas_brinquedos: "Empresas de Brinquedos",
+  apicultores: "Apicultores",
+  agencias: "Agências de Viagens e Receptivo",
+  turismo_rural: "Turismo Rural",
+  gastronomia_rural: "Gastronomia Rural",
+  gastronomico_seg: "Turismo Gastronômico",
+  info_turisticas: "Pontos de Informações Turísticas",
+  postos_gasolina: "Postos de Gasolina",
+  transp_interno: "Transportes - Interno",
+  turismo_industrial: "Turismo Comercial",
+  recreacao: "Recreação e Entretenimento",
+  saude: "Saúde",
+  atendimento_pet: "Atendimento Pet",
+  associacoes: "Associações",
+  servicos_publicos: "Serviços Público",
+  farmacias: "Farmácia",
+  dentistas: "Dentistas",
+  transp_externo: "Transportes - Externo",
+  nautico_pesca: "Turismo Náutico/Pesca",
+  rancho_sitio: "Rancho/Sítio de Aluguel",
+  agencias_bancarias: "Agências Bancárias",
+  saloes_beleza: "Salões de Beleza/Cabeleireiro",
+  academias: "Academias de Ginástica",
+  supermercados: "Supermercados e Mercearias",
+  borracheiros_mecanicos: "Borracheiros/Mecânicos",
+  pracas: "Praças"
+});
+
+function cleanText(value, maxLength = 500) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function cleanLongText(value, maxLength = 2400) {
+  return String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function cleanUrl(value, maxLength = 500) {
+  const text = cleanText(value, maxLength);
+  if (!text) return "";
+  if (/^https?:\/\//i.test(text)) return text;
+  if (/^@?[A-Za-z0-9._]+$/.test(text)) return text;
+  return text;
+}
+
+function publicProtocol() {
+  const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  return `PUB-${day}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+}
+
 // ── Criação automática das tabelas ───────────────────────────
 async function initDatabase() {
   await pool.query(`
@@ -580,6 +664,138 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
   } catch (e) {
     console.error("Erro no upload:", e.message);
     res.status(e.status || 500).json({ error: e.message || "Erro ao enviar arquivo" });
+  }
+});
+
+app.post("/api/public-cadastro/upload", async (req, res) => {
+  try {
+    const { fileName, dataUrl, website } = req.body || {};
+    if (cleanText(website, 120)) return res.status(400).json({ error: "Envio inválido" });
+    const parsed = parseDataUrl(dataUrl);
+    const isImage = /^image\/(png|jpe?g|webp)$/i.test(parsed.mimeType);
+    if (!isImage) return res.status(400).json({ error: "Envie uma foto em JPG, PNG ou WEBP" });
+    if (parsed.buffer.length > 20 * 1024 * 1024) {
+      return res.status(400).json({ error: "Foto muito grande. Limite: 20 MB" });
+    }
+
+    const prepared = await optimizeImageUpload({
+      fileName: cleanFileName(fileName || "fachada.jpg", parsed.mimeType),
+      mimeType: parsed.mimeType,
+      buffer: parsed.buffer
+    });
+
+    if (prepared.buffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: "A foto otimizada ainda ficou muito grande. Tente outra imagem." });
+    }
+
+    const file = await uploadToLocalStorage({
+      fileName: `fachada-${prepared.fileName}`,
+      mimeType: prepared.mimeType,
+      buffer: prepared.buffer
+    });
+    res.json({
+      file: {
+        ...file,
+        mimeType: prepared.mimeType,
+        originalMimeType: parsed.mimeType,
+        optimized: Boolean(prepared.optimized),
+        originalBytes: prepared.originalBytes || parsed.buffer.length,
+        storedBytes: prepared.buffer.length
+      }
+    });
+  } catch (e) {
+    console.error("Erro no upload público:", e.message);
+    res.status(e.status || 500).json({ error: e.message || "Erro ao enviar foto" });
+  }
+});
+
+app.post("/api/public-cadastro", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const body = req.body || {};
+    if (cleanText(body.website, 120)) return res.status(400).json({ error: "Envio inválido" });
+
+    const modulo = cleanText(body.modulo, 80);
+    const moduloLabel = PUBLIC_CADASTRO_MODULES[modulo];
+    if (!moduloLabel) return res.status(400).json({ error: "Escolha uma categoria válida" });
+
+    const nome = cleanText(body.nome, 180);
+    const responsavel = cleanText(body.responsavel, 180);
+    const telefone = cleanText(body.telefone, 80);
+    const endereco = cleanText(body.endereco, 280);
+    const foto = body.foto && typeof body.foto === "object" ? body.foto : {};
+    const fotoUrl = cleanText(foto.imageUrl || foto.directUrl || foto.viewUrl || body.foto_url, 700);
+    const aceite = body.aceite_responsabilidade === true || body.aceite_responsabilidade === "Sim";
+
+    if (!nome) return res.status(400).json({ error: "Informe o nome do estabelecimento ou atrativo" });
+    if (!responsavel) return res.status(400).json({ error: "Informe o responsável pelo cadastro" });
+    if (!telefone) return res.status(400).json({ error: "Informe telefone ou WhatsApp" });
+    if (!endereco) return res.status(400).json({ error: "Informe o endereço" });
+    if (!fotoUrl) return res.status(400).json({ error: "A foto da fachada é obrigatória" });
+    if (!aceite) return res.status(400).json({ error: "Confirme a responsabilidade pelas informações enviadas" });
+
+    const protocolo = publicProtocol();
+    const descricao = cleanLongText(body.descricao);
+    const produtosServicos = cleanLongText(body.produtos_servicos, 1600);
+    const observacoes = cleanLongText(body.observacoes, 1600);
+    const autorizaGuia = body.autoriza_guia === true || body.autoriza_guia === "Sim" ? "Sim" : "Não";
+    const now = new Date().toISOString();
+
+    const record = {
+      id: `publico-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`,
+      protocolo,
+      nome,
+      categoria: moduloLabel,
+      status: "Pendente",
+      publicar_guia: "Não",
+      origem_cadastro: "Página pública de cadastro",
+      data_envio_publico: now,
+      responsavel,
+      telefone,
+      whatsapp: telefone,
+      email: cleanText(body.email, 180),
+      cnpj_cpf: cleanText(body.cnpj_cpf, 80),
+      endereco,
+      maps: cleanUrl(body.maps, 700),
+      site: cleanUrl(body.site, 700),
+      instagram: cleanUrl(body.instagram, 180),
+      horario: cleanText(body.horario, 260),
+      produtos_servicos: produtosServicos,
+      descricao,
+      descritivo: descricao,
+      observacoes,
+      autorizacao_publicacao_guia: autorizaGuia,
+      foto: fotoUrl,
+      foto_nome: cleanText(foto.name, 260),
+      foto_mime: cleanText(foto.mimeType, 80),
+      foto_drive_id: cleanText(foto.id, 240),
+      foto_view_url: cleanText(foto.viewUrl, 700),
+      foto_storage: cleanText(foto.storage || "local", 60)
+    };
+
+    await client.query("BEGIN");
+    const { rows } = await client.query("SELECT data FROM inventory WHERE id=1 FOR UPDATE");
+    const data = rows[0]?.data && typeof rows[0].data === "object" ? rows[0].data : {};
+    if (!Array.isArray(data[modulo])) data[modulo] = [];
+    data[modulo].push(record);
+    const saved = await client.query(`
+      INSERT INTO inventory (id, data, updated_at) VALUES (1, $1::jsonb, now())
+      ON CONFLICT (id) DO UPDATE SET data = $1::jsonb, updated_at = now()
+      RETURNING to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS version
+    `, [JSON.stringify(data)]);
+    await client.query(
+      "INSERT INTO audit_log (user_id, user_name, acao, modulo, nome) VALUES ($1,$2,$3,$4,$5)",
+      ["publico", responsavel, "Cadastro público recebido", moduloLabel, nome]
+    );
+    await client.query("COMMIT");
+
+    res.json({ ok: true, protocolo, version: saved.rows[0]?.version || "" });
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch (_) {}
+    console.error("Erro no cadastro público:", e.message);
+    res.status(e.status || 500).json({ error: e.message || "Erro ao gravar cadastro" });
+  } finally {
+    client.release();
   }
 });
 

@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro no Inventário Turístico de Itatinga</title>
+  <style>
+    :root {
+      --azul-principal:#0B63B6;
+      --azul-escuro:#062F5F;
+      --verde-natureza:#66C943;
+      --laranja-eventos:#F58220;
+      --amarelo-mel:#FDB515;
+      --cinza-fundo:#F5F7FA;
+      --cinza-borda:#E6EAF0;
+      --texto-principal:#1F2933;
+      --texto-secundario:#52616B;
+      --branco:#FFFFFF;
+      --radius-card:16px;
+      --radius-btn:10px;
+      --shadow-card:0 8px 24px rgba(11,99,182,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--texto-principal);
+      background:var(--cinza-fundo);
+    }
+    header{
+      background:var(--branco);
+      border-bottom:1px solid var(--cinza-borda);
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+    .topbar{
+      width:min(1120px,calc(100% - 32px));
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:16px 0;
+    }
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand-mark{
+      width:48px;
+      height:48px;
+      border-radius:14px;
+      background:
+        radial-gradient(circle at 30% 28%,var(--amarelo-mel) 0 18%,transparent 19%),
+        radial-gradient(circle at 72% 32%,var(--verde-natureza) 0 19%,transparent 20%),
+        linear-gradient(135deg,var(--azul-principal),var(--azul-escuro));
+      box-shadow:var(--shadow-card);
+      flex:0 0 auto;
+    }
+    .brand-title{font-weight:800;color:var(--azul-escuro);font-size:1.08rem;line-height:1.15}
+    .brand-subtitle{font-size:.86rem;color:var(--texto-secundario);margin-top:2px}
+    .status-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(11,99,182,.18);
+      border-radius:999px;
+      padding:8px 12px;
+      color:var(--azul-escuro);
+      background:#F8FBFF;
+      font-size:.9rem;
+      white-space:nowrap;
+    }
+    main{
+      width:min(1120px,calc(100% - 32px));
+      margin:28px auto 40px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 340px;
+      gap:24px;
+      align-items:start;
+    }
+    .panel,.side{
+      background:var(--branco);
+      border:1px solid var(--cinza-borda);
+      border-radius:var(--radius-card);
+      box-shadow:var(--shadow-card);
+    }
+    .panel{padding:28px}
+    .side{padding:22px;position:sticky;top:96px}
+    h1{
+      margin:0 0 8px;
+      color:var(--azul-escuro);
+      font-size:clamp(1.55rem,3vw,2.25rem);
+      line-height:1.12;
+      letter-spacing:0;
+    }
+    .lead{margin:0 0 24px;color:var(--texto-secundario);line-height:1.55}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px;
+    }
+    .field{display:flex;flex-direction:column;gap:7px}
+    .field.full{grid-column:1/-1}
+    label{font-weight:700;color:var(--azul-escuro);font-size:.94rem}
+    .hint{font-size:.83rem;color:var(--texto-secundario);line-height:1.4}
+    input,select,textarea{
+      width:100%;
+      border:1px solid #D8E0EA;
+      border-radius:10px;
+      padding:12px 13px;
+      font:inherit;
+      color:var(--texto-principal);
+      background:#fff;
+      outline:none;
+    }
+    textarea{min-height:110px;resize:vertical}
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--azul-principal);
+      box-shadow:0 0 0 3px rgba(11,99,182,.14);
+    }
+    .upload-box{
+      border:2px dashed #B7C7DA;
+      border-radius:14px;
+      padding:18px;
+      background:#F9FBFE;
+      display:grid;
+      grid-template-columns:160px 1fr;
+      gap:18px;
+      align-items:center;
+    }
+    .preview{
+      aspect-ratio:4/3;
+      border-radius:12px;
+      border:1px solid var(--cinza-borda);
+      background:#fff;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      color:var(--texto-secundario);
+      font-size:.9rem;
+      text-align:center;
+      padding:10px;
+    }
+    .preview img{width:100%;height:100%;object-fit:cover;display:block}
+    .check{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:12px;
+      border:1px solid var(--cinza-borda);
+      border-radius:12px;
+      background:#FBFCFE;
+    }
+    .check input{width:18px;height:18px;margin-top:2px;flex:0 0 auto}
+    .actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:12px;
+      margin-top:24px;
+      padding-top:20px;
+      border-top:1px solid var(--cinza-borda);
+    }
+    button{
+      border:0;
+      border-radius:var(--radius-btn);
+      padding:13px 20px;
+      font-weight:800;
+      cursor:pointer;
+      min-height:46px;
+    }
+    .btn-primary{background:var(--azul-principal);color:#fff}
+    .btn-primary:hover{background:#084F95}
+    .btn-primary:disabled{background:#9AB7D4;cursor:not-allowed}
+    .btn-ghost{background:#EEF5FC;color:var(--azul-escuro)}
+    .notice{
+      border-radius:14px;
+      padding:14px 16px;
+      margin:0 0 18px;
+      display:none;
+      line-height:1.45;
+    }
+    .notice.ok{display:block;background:#EFFBEA;border:1px solid #BDE7AD;color:#225A1F}
+    .notice.err{display:block;background:#FFF4F0;border:1px solid #F4B49C;color:#872D12}
+    .side h2{font-size:1.05rem;margin:0 0 12px;color:var(--azul-escuro)}
+    .side ul{padding:0;margin:0;list-style:none;display:grid;gap:12px}
+    .side li{display:flex;gap:10px;color:var(--texto-secundario);line-height:1.4}
+    .side b{color:var(--azul-escuro)}
+    .dot{
+      width:22px;
+      height:22px;
+      border-radius:8px;
+      background:#EAF4FF;
+      display:grid;
+      place-items:center;
+      color:var(--azul-principal);
+      flex:0 0 auto;
+      font-size:.82rem;
+      font-weight:900;
+    }
+    .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+    footer{
+      background:var(--azul-escuro);
+      color:rgba(255,255,255,.82);
+      padding:22px 16px;
+      text-align:center;
+      font-size:.9rem;
+    }
+    @media (max-width:900px){
+      main{grid-template-columns:1fr}
+      .side{position:static}
+    }
+    @media (max-width:640px){
+      .topbar{align-items:flex-start;flex-direction:column}
+      .status-chip{white-space:normal}
+      .panel{padding:20px}
+      .grid{grid-template-columns:1fr}
+      .upload-box{grid-template-columns:1fr}
+      .preview{max-width:240px;width:100%}
+      .actions{flex-direction:column-reverse;align-items:stretch}
+      button{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">Turismo Itatinga - SP</div>
+          <div class="brand-subtitle">Inventário Turístico Municipal</div>
+        </div>
+      </div>
+      <div class="status-chip">Cadastro enviado para análise da equipe</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="titulo">
+      <h1 id="titulo">Cadastro de estabelecimento ou atrativo</h1>
+      <p class="lead">Preencha as informações principais e envie uma foto da fachada. O cadastro será analisado antes de entrar no sistema e antes de qualquer publicação no Guia da Cidade.</p>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <form id="cadastroForm">
+        <input class="hp" type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+
+        <div class="grid">
+          <div class="field full">
+            <label for="modulo">Categoria *</label>
+            <select id="modulo" name="modulo" required>
+              <option value="">Selecione uma categoria</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="nome">Nome do estabelecimento ou atrativo *</label>
+            <input id="nome" name="nome" required maxlength="180" autocomplete="organization">
+          </div>
+
+          <div class="field">
+            <label for="responsavel">Responsável pelo cadastro *</label>
+            <input id="responsavel" name="responsavel" required maxlength="180" autocomplete="name">
+          </div>
+
+          <div class="field">
+            <label for="telefone">Telefone / WhatsApp *</label>
+            <input id="telefone" name="telefone" required maxlength="80" inputmode="tel" autocomplete="tel">
+          </div>
+
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" maxlength="180" type="email" autocomplete="email">
+          </div>
+
+          <div class="field">
+            <label for="cnpj_cpf">CNPJ ou CPF</label>
+            <input id="cnpj_cpf" name="cnpj_cpf" maxlength="80">
+          </div>
+
+          <div class="field">
+            <label for="horario">Horário de atendimento</label>
+            <input id="horario" name="horario" maxlength="260" placeholder="Ex.: Seg. a Sex. das 08h às 18h">
+          </div>
+
+          <div class="field full">
+            <label for="endereco">Endereço completo *</label>
+            <input id="endereco" name="endereco" required maxlength="280" autocomplete="street-address">
+          </div>
+
+          <div class="field">
+            <label for="maps">Link do Google Maps</label>
+            <input id="maps" name="maps" maxlength="700" inputmode="url" placeholder="https://maps.app.goo.gl/...">
+          </div>
+
+          <div class="field">
+            <label for="instagram">Instagram</label>
+            <input id="instagram" name="instagram" maxlength="180" placeholder="@nomedoperfil">
+          </div>
+
+          <div class="field full">
+            <label for="site">Site ou rede social principal</label>
+            <input id="site" name="site" maxlength="700" inputmode="url" placeholder="https://...">
+          </div>
+
+          <div class="field full">
+            <label for="produtos_servicos">Produtos e serviços oferecidos</label>
+            <textarea id="produtos_servicos" name="produtos_servicos" maxlength="1600" placeholder="Descreva os principais produtos, serviços, atividades, estrutura e diferenciais."></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="descricao">Descrição para análise</label>
+            <textarea id="descricao" name="descricao" maxlength="2400" placeholder="Conte um pouco sobre o estabelecimento ou atrativo."></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="fachada">Foto da fachada do estabelecimento *</label>
+            <div class="upload-box">
+              <div id="preview" class="preview">A foto aparecerá aqui</div>
+              <div>
+                <input id="fachada" name="fachada" type="file" accept="image/png,image/jpeg,image/webp" required>
+                <p class="hint">Envie uma foto atual e nítida da fachada. O sistema otimiza a imagem automaticamente para ficar leve.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="field full">
+            <label for="observacoes">Observações</label>
+            <textarea id="observacoes" name="observacoes" maxlength="1600" placeholder="Informações complementares para a equipe do turismo."></textarea>
+          </div>
+
+          <div class="field full">
+            <label class="check">
+              <input id="autoriza_guia" name="autoriza_guia" type="checkbox">
+              <span>Autorizo que as informações e a foto sejam analisadas para possível publicação no Guia da Cidade.</span>
+            </label>
+          </div>
+
+          <div class="field full">
+            <label class="check">
+              <input id="aceite_responsabilidade" name="aceite_responsabilidade" type="checkbox" required>
+              <span>Declaro que as informações enviadas são verdadeiras e que tenho autorização para encaminhar a foto da fachada.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="reset" class="btn-ghost">Limpar</button>
+          <button id="submitBtn" type="submit" class="btn-primary">Enviar cadastro</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="side" aria-label="Orientações">
+      <h2>Como funciona</h2>
+      <ul>
+        <li><span class="dot">1</span><span><b>Envio:</b> a empresa informa os dados e anexa a foto da fachada.</span></li>
+        <li><span class="dot">2</span><span><b>Análise:</b> o cadastro entra como pendente no inventário.</span></li>
+        <li><span class="dot">3</span><span><b>Publicação:</b> a equipe decide se o item será publicado no Guia da Cidade.</span></li>
+      </ul>
+    </aside>
+  </main>
+
+  <footer>Diretoria Municipal de Lazer, Turismo e Eventos - Prefeitura Municipal de Itatinga/SP</footer>
+
+  <script>
+    const categorias = {
+      hospedagem:"Meios de Hospedagem",
+      restaurantes:"Restaurantes, Pastelarias, Pizzarias e Lanchonetes",
+      bares:"Bares",
+      cafeterias:"Cafeterias",
+      estruturas_eventos:"Estruturas para Eventos",
+      empresas_eventos:"Organizadoras de Eventos",
+      parques_naturais:"Parques Naturais",
+      outros_naturais:"Outros Atrativos Naturais",
+      conjunto_arq:"Conjunto Arquitetônico",
+      lugares_fe:"Lugares de Manifestações de Fé",
+      arq_religiosa:"Arquitetura Religiosa",
+      marcos_historicos:"Marcos Históricos",
+      lugares_cultura:"Lugares de Cultura",
+      eventos:"Eventos",
+      artesanato:"Artesanato/Trabalhos Manuais",
+      confeitaria_artesanal:"Confeitaria Artesanal",
+      trailers_alimentacao:"Trailers de Alimentação",
+      vendedores_ambulantes:"Vendedores Ambulantes",
+      empresas_brinquedos:"Empresas de Brinquedos",
+      apicultores:"Apicultores",
+      agencias:"Agências de Viagens e Receptivo",
+      turismo_rural:"Turismo Rural",
+      gastronomia_rural:"Gastronomia Rural",
+      gastronomico_seg:"Turismo Gastronômico",
+      info_turisticas:"Pontos de Informações Turísticas",
+      postos_gasolina:"Postos de Gasolina",
+      transp_interno:"Transportes - Interno",
+      turismo_industrial:"Turismo Comercial",
+      recreacao:"Recreação e Entretenimento",
+      saude:"Saúde",
+      atendimento_pet:"Atendimento Pet",
+      associacoes:"Associações",
+      servicos_publicos:"Serviços Público",
+      farmacias:"Farmácia",
+      dentistas:"Dentistas",
+      transp_externo:"Transportes - Externo",
+      nautico_pesca:"Turismo Náutico/Pesca",
+      rancho_sitio:"Rancho/Sítio de Aluguel",
+      agencias_bancarias:"Agências Bancárias",
+      saloes_beleza:"Salões de Beleza/Cabeleireiro",
+      academias:"Academias de Ginástica",
+      supermercados:"Supermercados e Mercearias",
+      borracheiros_mecanicos:"Borracheiros/Mecânicos",
+      pracas:"Praças"
+    };
+
+    const form = document.getElementById("cadastroForm");
+    const select = document.getElementById("modulo");
+    const fachada = document.getElementById("fachada");
+    const preview = document.getElementById("preview");
+    const notice = document.getElementById("notice");
+    const submitBtn = document.getElementById("submitBtn");
+    let selectedFile = null;
+
+    Object.entries(categorias).forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+
+    function showNotice(type, message) {
+      notice.className = "notice " + type;
+      notice.innerHTML = message;
+      notice.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Não foi possível ler a imagem"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function resizeImage(file) {
+      const sourceUrl = URL.createObjectURL(file);
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error("Imagem inválida"));
+          image.src = sourceUrl;
+        });
+        const max = 1800;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.84);
+      } finally {
+        URL.revokeObjectURL(sourceUrl);
+      }
+    }
+
+    fachada.addEventListener("change", () => {
+      selectedFile = fachada.files && fachada.files[0] ? fachada.files[0] : null;
+      preview.innerHTML = "A foto aparecerá aqui";
+      if (!selectedFile) return;
+      if (!/^image\/(png|jpe?g|webp)$/i.test(selectedFile.type)) {
+        selectedFile = null;
+        fachada.value = "";
+        showNotice("err", "Envie uma foto em JPG, PNG ou WEBP.");
+        return;
+      }
+      const url = URL.createObjectURL(selectedFile);
+      preview.innerHTML = `<img src="${url}" alt="Pré-visualização da fachada">`;
+    });
+
+    form.addEventListener("reset", () => {
+      selectedFile = null;
+      preview.innerHTML = "A foto aparecerá aqui";
+      notice.className = "notice";
+      notice.textContent = "";
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      if (!selectedFile) {
+        showNotice("err", "A foto da fachada é obrigatória.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Enviando...";
+      try {
+        const dataUrl = selectedFile.size > 4 * 1024 * 1024
+          ? await resizeImage(selectedFile)
+          : await fileToDataUrl(selectedFile);
+
+        const uploadRes = await fetch("/api/public-cadastro/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: selectedFile.name,
+            dataUrl,
+            website: document.getElementById("website").value
+          })
+        });
+        const uploadJson = await uploadRes.json().catch(() => ({}));
+        if (!uploadRes.ok) throw new Error(uploadJson.error || "Não foi possível enviar a foto.");
+
+        const values = Object.fromEntries(new FormData(form).entries());
+        values.aceite_responsabilidade = document.getElementById("aceite_responsabilidade").checked;
+        values.autoriza_guia = document.getElementById("autoriza_guia").checked;
+        values.foto = uploadJson.file;
+
+        const saveRes = await fetch("/api/public-cadastro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values)
+        });
+        const saveJson = await saveRes.json().catch(() => ({}));
+        if (!saveRes.ok) throw new Error(saveJson.error || "Não foi possível salvar o cadastro.");
+
+        form.reset();
+        showNotice("ok", `Cadastro enviado com sucesso. Protocolo: <strong>${saveJson.protocolo}</strong>. Ele ficará pendente para análise da equipe.`);
+      } catch (error) {
+        showNotice("err", error.message || "Não foi possível enviar o cadastro.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Enviar cadastro";
+      }
+    });
+  </script>
+</body>
+</html>
