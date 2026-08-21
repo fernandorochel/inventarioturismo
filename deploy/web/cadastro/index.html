@@ -43,20 +43,15 @@
       gap:18px;
       padding:16px 0;
     }
-    .brand{display:flex;align-items:center;gap:12px;min-width:0}
-    .brand-mark{
-      width:48px;
-      height:48px;
-      border-radius:14px;
-      background:
-        radial-gradient(circle at 30% 28%,var(--amarelo-mel) 0 18%,transparent 19%),
-        radial-gradient(circle at 72% 32%,var(--verde-natureza) 0 19%,transparent 20%),
-        linear-gradient(135deg,var(--azul-principal),var(--azul-escuro));
-      box-shadow:var(--shadow-card);
+    .brand{display:flex;align-items:center;gap:16px;min-width:0}
+    .brand-logo{
+      width:clamp(190px,25vw,280px);
+      max-height:76px;
+      object-fit:contain;
+      display:block;
       flex:0 0 auto;
     }
-    .brand-title{font-weight:800;color:var(--azul-escuro);font-size:1.08rem;line-height:1.15}
-    .brand-subtitle{font-size:.86rem;color:var(--texto-secundario);margin-top:2px}
+    .brand-subtitle{font-size:.92rem;color:var(--texto-secundario);font-weight:700}
     .status-chip{
       display:inline-flex;
       align-items:center;
@@ -211,6 +206,8 @@
     }
     @media (max-width:640px){
       .topbar{align-items:flex-start;flex-direction:column}
+      .brand{align-items:flex-start;flex-direction:column;gap:6px}
+      .brand-logo{width:min(260px,100%)}
       .status-chip{white-space:normal}
       .panel{padding:20px}
       .grid{grid-template-columns:1fr}
@@ -225,11 +222,8 @@
   <header>
     <div class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true"></div>
-        <div>
-          <div class="brand-title">Turismo Itatinga - SP</div>
-          <div class="brand-subtitle">Inventário Turístico Municipal</div>
-        </div>
+        <img class="brand-logo" src="/assets/logo-turismo-2025-itatinga.png" alt="Turismo Itatinga - SP">
+        <div class="brand-subtitle">Inventário Turístico Municipal</div>
       </div>
       <div class="status-chip">Cadastro enviado para análise da equipe</div>
     </div>
