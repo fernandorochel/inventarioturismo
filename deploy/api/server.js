@@ -163,7 +163,11 @@ const driveFolderCache = new Map();
 
 function parseDataUrl(dataUrl) {
   const m = /^data:([^;,]+);base64,(.+)$/i.exec(String(dataUrl || ""));
-  if (!m) throw new Error("Arquivo inválido");
+  if (!m) {
+    const err = new Error("Arquivo inválido");
+    err.status = 400;
+    throw err;
+  }
   return { mimeType: m[1], buffer: Buffer.from(m[2], "base64") };
 }
 
