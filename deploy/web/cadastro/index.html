@@ -129,7 +129,7 @@
       padding:28px;
       display:flex;
       flex-direction:column;
-      justify-content:space-between;
+      justify-content:flex-start;
       overflow:hidden;
     }
     .intro-visual::before{
@@ -165,10 +165,31 @@
     }
     .visual-title{
       position:relative;
-      font-size:1.05rem;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-width:370px;
+      padding-right:92px;
+      text-wrap:balance;
+    }
+    .visual-title .visual-kicker{
+      color:rgba(255,255,255,.82);
+      font-size:.76rem;
       font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .visual-title strong{
+      font-size:clamp(1.25rem,2.4vw,1.72rem);
+      font-weight:900;
+      line-height:1.08;
+      letter-spacing:0;
+    }
+    .visual-title small{
+      color:rgba(255,255,255,.9);
+      font-size:.95rem;
+      font-weight:700;
       line-height:1.35;
-      max-width:250px;
     }
     .visual-card{
       position:relative;
@@ -176,11 +197,13 @@
       background:rgba(255,255,255,.14);
       border:1px solid rgba(255,255,255,.24);
       border-radius:14px;
-      padding:14px;
-      max-width:270px;
+      padding:15px 16px;
+      max-width:360px;
+      margin-top:18px;
       backdrop-filter:blur(8px);
-      font-size:.92rem;
-      line-height:1.4;
+      font-size:.95rem;
+      font-weight:700;
+      line-height:1.42;
     }
     .color-strip{
       height:7px;
@@ -387,7 +410,11 @@
       <div class="intro-visual" aria-hidden="true">
         <div class="route"></div>
         <div class="bee"></div>
-        <div class="visual-title">Itatinga: natureza, mel, eventos, cultura e experiências no interior paulista.</div>
+        <div class="visual-title">
+          <span class="visual-kicker">Itatinga/SP</span>
+          <strong>Natureza, mel, eventos e cultura</strong>
+          <small>Experiências no interior paulista.</small>
+        </div>
         <div class="visual-card">Envio público com foto obrigatória da fachada e revisão institucional antes da publicação.</div>
       </div>
     </section>
