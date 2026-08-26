@@ -12,6 +12,12 @@ const PgSession  = require("connect-pg-simple")(session);
 const path       = require("path");
 const crypto     = require("crypto");
 const fs         = require("fs");
+const {
+  buildReportDocx,
+  buildReportPdf,
+  buildReportXlsx,
+  normalizeReportPayload
+} = require("./report-exporter");
 let sharp = null;
 try {
   sharp = require("sharp");
@@ -624,6 +630,35 @@ app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
     `, [payload]);
     res.json({ ok: true, version: inserted.rows[0].version });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro ao salvar dados" }); }
+});
+
+app.post("/api/export/:format", requireAuth, async (req, res) => {
+  try {
+    const format = String(req.params.format || "").toLowerCase();
+    const payload = normalizeReportPayload(req.body);
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const options = {
+      uploadDir,
+      uploadPublicPath,
+      origin,
+      sharp,
+      logger: console
+    };
+
+    let result;
+    if (format === "pdf") result = await buildReportPdf(payload, options);
+    else if (format === "docx") result = await buildReportDocx(payload, options);
+    else if (format === "xlsx") result = await buildReportXlsx(payload, options);
+    else return res.status(400).json({ error: "Formato de relatório inválido" });
+
+    res.set("Content-Type", result.contentType || "application/octet-stream");
+    res.set("Content-Disposition", `attachment; filename="${result.filename}"`);
+    res.set("Cache-Control", "no-store");
+    res.send(Buffer.from(result.buffer));
+  } catch (e) {
+    console.error("Erro ao exportar relatório:", e);
+    res.status(500).json({ error: e.message || "Erro ao gerar relatório" });
+  }
 });
 
 app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {

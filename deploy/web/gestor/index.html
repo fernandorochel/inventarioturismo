@@ -1213,7 +1213,7 @@ function renderModule(key){
     <input class="grow" placeholder="Buscar..." value="${f.q}" oninput="setFilter('${key}','q',this.value)">
     <select onchange="setFilter('${key}','cat',this.value)"><option value="">Todas as categorias</option>${catOpts}</select>
     <select onchange="setFilter('${key}','st',this.value)"><option value="">Todas as situações</option>${stOpts}</select>
-    <button class="btn-sec btn-sm" onclick="gerarRelatorioModulo('${key}','pdf')">📄 PDF</button> <button class="btn-sec btn-sm" onclick="gerarRelatorioModulo('${key}','word')">📝 Word</button></div>`;
+    <button class="btn-sec btn-sm" onclick="gerarRelatorioModulo('${key}','pdf')">📄 PDF</button> <button class="btn-sec btn-sm" onclick="gerarRelatorioModulo('${key}','word')">📝 Word</button> <button class="btn-sec btn-sm" onclick="gerarRelatorioModulo('${key}','xlsx')">📊 Excel</button></div>`;
   if(!rows.length){h+=`<div class="tablewrap"><div class="empty">Nenhum registro encontrado.${canEdit()?'<br><br><button class="btn btn-sm" onclick="openForm(\''+key+'\')">+ Cadastrar o primeiro</button>':''}</div></div>`;}
   else{
     h+=`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${labelOf(m,c)}</th>`).join("")}<th style="text-align:right">Ações</th></tr></thead><tbody>`;
@@ -1401,17 +1401,19 @@ function renderExport(){const total=totalRecords();
   const stOpts=STATUS.map(x=>`<option>${x}</option>`).join("");
   const extras=[{key:"_municipio",icon:"🏛️",label:"Identificação do Município",n:(DATA._municipio&&DATA._municipio.nome?1:0)}];
   let h=`<div class="crumb">Sistema › Relatórios e Exportação</div>
-  <div class="page-head"><div><h2>📤 Relatórios e Exportação</h2><p>Exporte o inventário em PDF ou Word (${total} registros)</p></div></div>
-  <div class="note">Selecione os itens e use os filtros (situação e busca). O relatório sai com cabeçalho oficial e fotos. Formatos: <b>PDF</b> e <b>Word</b>.</div>
+  <div class="page-head"><div><h2>📤 Relatórios e Exportação</h2><p>Exporte o inventário em PDF, Word ou Excel (${total} registros)</p></div></div>
+  <div class="note">Selecione os itens e use os filtros. O sistema gera documentos oficiais no servidor, com imagens incorporadas ao PDF e ao Word. Formatos: <b>PDF</b>, <b>Word (.docx)</b> e <b>Excel (.xlsx)</b>.</div>
   <div class="cards">
-    <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorio()"><div class="ic">🧾</div><div class="v" style="font-size:15px">PDF</div><div class="l">Gerar / imprimir ✓</div></div>
-    <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorioWord()"><div class="ic">📝</div><div class="v" style="font-size:15px">Word (.doc)</div><div class="l">Baixar ✓</div></div>
+    <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorio()"><div class="ic">🧾</div><div class="v" style="font-size:15px">PDF</div><div class="l">Arquivo A4 pronto ✓</div></div>
+    <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorioWord()"><div class="ic">📝</div><div class="v" style="font-size:15px">Word (.docx)</div><div class="l">Word real ✓</div></div>
+    <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorioExcel()"><div class="ic">📊</div><div class="v" style="font-size:15px">Excel (.xlsx)</div><div class="l">Dados tabulados ✓</div></div>
     <div class="stat" style="cursor:pointer;border-color:#16a34a" onclick="gerarListaResponsaveis()"><div class="ic">👤</div><div class="v" style="font-size:13px">Responsáveis</div><div class="l">Lista de contatos ↓</div></div>
   </div>
   <div class="panel"><h3>Filtros de seleção</h3>
     <div class="toolbar">
       <input id="expq" class="grow" placeholder="Buscar nos registros...">
       <select id="expst"><option value="">Todas as situações</option>${stOpts}</select>
+      <select id="expmode"><option value="interno">Relatório interno</option><option value="publico">Relatório público</option></select>
       <button class="btn-sec btn-sm" onclick="_toggleAllExp(true)">Marcar todos</button>
       <button class="btn-sec btn-sm" onclick="_toggleAllExp(false)">Desmarcar todos</button>
     </div>
@@ -1419,15 +1421,16 @@ function renderExport(){const total=totalRecords();
     ${extras.map(e=>`<label style="display:flex;align-items:center;gap:10px;font-size:13.5px"><input type="checkbox" class="expchk" id="chk_${e.key}" checked> ${e.icon} ${e.label} <span style="margin-left:auto;color:var(--cinza-claro)">${e.n} ficha</span></label>`).join("")}
     ${MODULES.map(m=>`<label style="display:flex;align-items:center;gap:10px;font-size:13.5px"><input type="checkbox" class="expchk" id="chk_${m.key}" checked> ${m.icon} ${m.label} <span style="margin-left:auto;color:var(--cinza-claro)">${(DATA[m.key]||[]).length} itens</span></label>`).join("")}</div>
     <div style="display:flex;gap:10px;margin-top:16px">
-      <button class="btn btn-sm" onclick="gerarRelatorio()">🧾 Gerar PDF</button>
-      <button class="btn btn-sm" onclick="gerarRelatorioWord()">📝 Gerar Word</button>
+      <button class="btn btn-sm" onclick="gerarRelatorio()">🧾 Baixar PDF</button>
+      <button class="btn btn-sm" onclick="gerarRelatorioWord()">📝 Baixar Word</button>
+      <button class="btn btn-sm" onclick="gerarRelatorioExcel()">📊 Baixar Excel</button>
       <button class="btn-sec btn-sm" onclick="gerarListaResponsaveis()" style="border-color:#16a34a;color:#16a34a">👤 Lista de Responsáveis</button></div>
   </div>`;
   document.getElementById("main").innerHTML=h;}
 function _toggleAllExp(v){document.querySelectorAll(".expchk").forEach(c=>c.checked=v);}
 function _escR(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function _itemDeModulo(m){return {label:m.label,icon:m.icon,fields:allFields(m),sections:m.sections,recs:(DATA[m.key]||[])};}
-function _itemMunicipio(){return {label:MUNICIPIO.label,icon:MUNICIPIO.icon,fields:allFields(MUNICIPIO),recs:((DATA._municipio&&Object.keys(DATA._municipio).length)?[DATA._municipio]:[])};}
+function _itemMunicipio(){return {label:MUNICIPIO.label,icon:MUNICIPIO.icon,fields:allFields(MUNICIPIO),sections:MUNICIPIO.sections,recs:((DATA._municipio&&Object.keys(DATA._municipio).length)?[DATA._municipio]:[])};}
 function _printCSS(extra){
   return `<style>
    @page{size:A4 portrait;margin:13mm 13mm 15mm 13mm}
@@ -1510,26 +1513,47 @@ function _docHTML(body,total,showPrintButton=true){
   ${printButton}
   ${body}<div class="report-footer">Turismo Itatinga · Prefeitura Municipal de Itatinga/SP</div></main></body></html>`;
 }
-function exportarPDF(items,filtros){
-  const {body,total}=_coletarRel(items,filtros);
+function _modoExport(){const el=document.getElementById("expmode");return el?el.value:"interno";}
+function _arquivoExportPadrao(fmt){const data=new Date().toISOString().slice(0,10);return `relatorio-turismo-itatinga-${_modoExport()}-${data}.${fmt}`;}
+function _nomeArquivoResposta(res,fmt){
+  const cd=res.headers.get("Content-Disposition")||res.headers.get("content-disposition")||"";
+  const m=cd.match(/filename="?([^"]+)"?/i);
+  return m?m[1]:_arquivoExportPadrao(fmt);
+}
+async function exportarServidor(fmt,items,filtros){
+  const {total}=_coletarRel(items,filtros);
   if(!total)return toast("Nenhum registro para exportar.");
+  const labels={pdf:"PDF",docx:"Word",xlsx:"Excel"};
   try{
-    const blob=new Blob([_docHTML(body,total)],{type:"text/html;charset=utf-8"});
-    const url=URL.createObjectURL(blob);
-    const w=window.open(url,"_blank");
-    if(!w){URL.revokeObjectURL(url);return toast("Permita pop-ups para abrir o relatório.");}
-    setTimeout(()=>URL.revokeObjectURL(url),15000);
+    toast("Preparando relatório...");
+    await new Promise(r=>setTimeout(r,80));
+    toast("Processando imagens...");
+    const res=await fetch(`/api/export/${fmt}`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({items,filtros,mode:_modoExport()})
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err.error||"Não foi possível gerar o relatório.");
+    }
+    toast("Gerando documento...");
+    const blob=await res.blob();
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=_nomeArquivoResposta(res,fmt);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1800);
+    toast(`Download pronto: ${labels[fmt]||fmt}`);
   }catch(e){
-    const w=window.open("","_blank");
-    if(!w)return toast("Permita pop-ups para abrir o relatório.");
-    w.document.open();w.document.write(_docHTML(body,total));w.document.close();
+    console.error(e);
+    toast(e.message||"Erro ao exportar relatório.");
   }
 }
-function exportarWord(items,filtros){const {body,total}=_coletarRel(items,filtros);if(!total)return toast("Nenhum registro para exportar.");
-  const blob=new Blob(["\ufeff"+_docHTML(body,total,false)],{type:"application/msword;charset=utf-8"});
-  const data=new Date().toISOString().slice(0,10);
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`relatorio-gestao-turismo-itatinga-${data}.doc`;
-  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);toast("Word gerado ("+total+" registros)");}
+function exportarPDF(items,filtros){return exportarServidor("pdf",items,filtros);}
+function exportarWord(items,filtros){return exportarServidor("docx",items,filtros);}
+function exportarExcel(items,filtros){return exportarServidor("xlsx",items,filtros);}
 function _selExport(){const items=[];
   const cm=document.getElementById("chk__municipio");if(!cm||cm.checked)items.push(_itemMunicipio());
   MODULES.forEach(m=>{const c=document.getElementById("chk_"+m.key);if(!c||c.checked)items.push(_itemDeModulo(m));});
@@ -1537,6 +1561,7 @@ function _selExport(){const items=[];
 function _filtrosExport(){const q=document.getElementById("expq"),st=document.getElementById("expst");return {q:q?q.value:"",st:st?st.value:""};}
 function gerarRelatorio(){exportarPDF(_selExport(),_filtrosExport());}
 function gerarRelatorioWord(){exportarWord(_selExport(),_filtrosExport());}
+function gerarRelatorioExcel(){exportarExcel(_selExport(),_filtrosExport());}
 function gerarListaResponsaveis(){
   const filtros=_filtrosExport();
   const q=(filtros.q||"").toLowerCase(),st=filtros.st||"";
@@ -1575,7 +1600,7 @@ function gerarListaResponsaveis(){
 }
 function gerarRelatorioModulo(key,fmt){const m=MODMAP[key];if(!m)return toast("Módulo não encontrado");
   const f=filterState[key]||{};const filtros={q:f.q||"",st:f.st||"",cat:f.cat||""};
-  (fmt==="word"?exportarWord:exportarPDF)([_itemDeModulo(m)],filtros);}
+  (fmt==="word"?exportarWord:fmt==="xlsx"?exportarExcel:exportarPDF)([_itemDeModulo(m)],filtros);}
 async function renderUsers(){
   await loadUsers();
   const rows=USERS.map((u,i)=>`
