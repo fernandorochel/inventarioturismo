@@ -377,7 +377,7 @@ const MODULES=[
 {key:"sinalizacao_tur",label:"Sinalização Turística",icon:"🪧",grupo:"C – Serviços e Equipamentos",cats:["Informativa", "Interpretativa", "Direcional", "Indicativa", "Mista", "Outros"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Local / Ponto da sinalização","text"],["categoria","Tipo de sinalização","cat"],["status","Situação do cadastro","sel","status"]]},{t:"Características",f:[["modalidade","Modalidade de acesso","sel","sinmod"],["abrangencia","Abrangência","sel","sinabr"],["padrao_intl","Obedece ao padrão internacional?","sel","simnao"],["padrao_qual","Padrão utilizado (se não internacional)","text"],["multi_idioma","Apresentada em mais de um idioma?","sel","simnao"],["idiomas","Idiomas utilizados","text"]]},{t:"Localização",f:[["endereco","Endereço / Referência","text"]]},{t:"Observações",f:[["descricao","Observações","area"]]}],sample:[]},
 {key:"horarios_onibus",label:"Horários de Ônibus",icon:"🚌",grupo:"C – Serviços e Equipamentos",noExtras:true,cats:[],listCols:["nome","status"],sections:[{t:"Identificação",f:[["nome","Linha (origem × destino)","text"],["empresa","Empresa / Operadora","text"],["status","Situação do cadastro","sel","status"]]},{t:"Dias úteis (Seg. a Sex.)",f:[["ida_uteis","Ida","area"],["volta_uteis","Volta","area"]]},{t:"Sábados",f:[["sabados","Ida / Volta","area"]]},{t:"Domingos e feriados",f:[["domingos","Ida / Volta","area"]]},{t:"Observações",f:[["observacoes","Observações","area"]]}],sample:[]},
 {key:"pracas",label:"Praças",icon:"🌳",grupo:"D – Atrativos Turísticos",cats:[],listCols:["nome","status"],sections:[{t:"Identificação",f:[["nome","Nome da praça","text"],["status","Situação do cadastro","sel","status"]]},{t:"Localização",f:[["endereco","Endereço","text"],["sinalizacao_tur","Possui sinalização turística?","sel","simnao"],["maps","Localização (Link Google Maps)","url"]]}],sample:[]},
-{key:"festa_trabalhador",label:"Indicações — Festa do Trabalhador",icon:"🏅",grupo:"Sistema",cats:[],listCols:["nome","homenageado","cargo"],sections:[{t:"Indicação",f:[["nome","Nome da empresa","text"],["homenageado","Nome do homenageado","text"],["cargo","Cargo / Função","text"],["observacoes","Observações","area"]]}],sample:[]}
+{key:"festa_trabalhador",label:"Indicações — Festa do Trabalhador",icon:"🏅",grupo:"Sistema",cats:[],listCols:["nome","responsavel","telefone","homenageado","cargo"],sections:[{t:"Indicação",f:[["nome","Nome da empresa","text"],["responsavel","Responsável","text"],["telefone","Telefone principal de contato","tel"],["homenageado","Nome do homenageado","text"],["cargo","Cargo / Função","text"],["observacoes","Observações","area"]]}],sample:[]}
 ];
 const MODMAP=Object.fromEntries(MODULES.map(m=>[m.key,m]));
 function allFields(m){return m.sections.flatMap(s=>s.f);}
@@ -1852,14 +1852,21 @@ function renderFestaTrabalhador(){
   if(!canEdit()&&!(DATA.festa_trabalhador||[]).length){
     document.getElementById("main").innerHTML='<div class="crumb">Sistema › Festa do Trabalhador</div><div class="page-head"><h2>🏅 Indicações — Festa do Trabalhador</h2></div><div class="tablewrap"><div class="empty">Nenhuma indicação cadastrada.</div></div>';return;
   }
-  /* Montar datalist com todos os nomes de empresas/cadastros do sistema */
-  const allNames=[...new Set(MODULES.filter(m=>m.key!=="festa_trabalhador").flatMap(m=>(DATA[m.key]||[]).map(r=>r.nome).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,"pt"));
-
+  const catalogo=festaCatalogoEmpresas();
   const registros=(DATA.festa_trabalhador||[]);
   const ano=new Date().getFullYear();
+  const catalogRows=catalogo.length?catalogo.map(c=>`<tr>
+        <td><b>${_esc(c.nome)}</b><br><span style="font-size:11.5px;color:var(--cinza-claro)">${_esc(c.modulo)}</span></td>
+        <td>${_esc(c.responsavel||"—")}</td>
+        <td>${_esc(c.telefone||"—")}</td>
+        <td>${_esc(c.categoria||"—")}</td>
+        <td style="text-align:right">${canEdit()?`<button class="iconbtn" onclick="_openFestaMerito('', '${c.key}', '${c.id}')">Indicar</button>`:""}</td>
+      </tr>`).join(""):`<tr><td colspan="5" style="text-align:center;color:var(--cinza-claro);padding:24px">Nenhuma empresa encontrada nos demais segmentos.</td></tr>`;
   let rows=registros.length
     ?registros.map(r=>`<tr class="row" onclick="openDetail('festa_trabalhador','${r.id}')">
         <td><b>${_esc(r.nome||"—")}</b></td>
+        <td>${_esc(r.responsavel||"—")}</td>
+        <td>${_esc(r.telefone||"—")}</td>
         <td>${_esc(r.homenageado||"—")}</td>
         <td><span class="tag">${_esc(r.cargo||"—")}</span></td>
         <td onclick="event.stopPropagation()">
@@ -1867,31 +1874,57 @@ function renderFestaTrabalhador(){
           <button class="iconbtn" onclick="delRecord('festa_trabalhador','${r.id}')">Excluir</button>`:""}
         </td>
       </tr>`).join("")
-    :`<tr><td colspan="4" style="text-align:center;color:var(--cinza-claro);padding:24px">Nenhuma indicação. Clique em "+ Adicionar" para começar.</td></tr>`;
+    :`<tr><td colspan="6" style="text-align:center;color:var(--cinza-claro);padding:24px">Nenhuma indicação. Use a lista acima ou clique em "+ Adicionar" para começar.</td></tr>`;
 
   let h=`<div class="crumb">Sistema › Festa do Trabalhador</div>
   <div class="page-head"><div><h2>🏅 Indicações — Festa do Trabalhador</h2>
-    <p>${registros.length} indicado(s) · Edição ${ano}</p></div>
+    <p>${registros.length} indicado(s) · ${catalogo.length} empresa(s) disponíveis nos outros segmentos · Edição ${ano}</p></div>
     <div style="display:flex;gap:8px">
       ${canEdit()?`<button class="btn btn-sm" onclick="_openFestaMerito()">+ Adicionar indicação</button>`:""}
       <button class="btn-sec btn-sm" style="border-color:#d97706;color:#d97706" onclick="gerarListaFesta()">🏅 Gerar Lista PDF</button>
     </div>
   </div>
-  <datalist id="dl_empresas">${allNames.map(n=>`<option value="${_esc(n)}">`).join("")}</datalist>
+  <div class="panel" style="margin-bottom:16px">
+    <h3>📋 Empresas cadastradas nos outros segmentos</h3>
+    <div class="toolbar" style="margin-bottom:10px">
+      <input class="grow" placeholder="Buscar empresa, responsável, telefone ou segmento..." oninput="filtrarTabela(this.value,'tblEmpresasFesta')">
+    </div>
+    <div class="tablewrap"><table id="tblEmpresasFesta">
+      <thead><tr><th>Empresa</th><th>Responsável</th><th>Telefone principal</th><th>Categoria</th><th style="text-align:right">Ação</th></tr></thead>
+      <tbody>${catalogRows}</tbody>
+    </table></div>
+  </div>
   <div class="tablewrap"><table>
-    <thead><tr><th>Nome da Empresa</th><th>Homenageado</th><th>Cargo / Função</th><th style="text-align:right">Ações</th></tr></thead>
+    <thead><tr><th>Nome da Empresa</th><th>Responsável</th><th>Telefone</th><th>Homenageado</th><th>Cargo / Função</th><th style="text-align:right">Ações</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
   document.getElementById("main").innerHTML=h;
 }
 
-function _openFestaMerito(id){
-  const rec=id?(DATA.festa_trabalhador||[]).find(r=>r.id===id)||{}:{};
+function festaTelefonePrincipal(r){return r.telefone||r.whatsapp||r.celular||r.resp_telefone||"";}
+function festaCatalogoEmpresas(){
+  return MODULES.filter(m=>m.key!=="festa_trabalhador").flatMap(m=>(DATA[m.key]||[]).filter(r=>r.nome).map(r=>({
+    key:m.key,id:r.id,nome:r.nome,modulo:m.label,categoria:r.categoria||"",responsavel:r.responsavel||"",telefone:festaTelefonePrincipal(r)
+  }))).sort((a,b)=>a.nome.localeCompare(b.nome,"pt",{sensitivity:"base"})||a.modulo.localeCompare(b.modulo,"pt",{sensitivity:"base"}));
+}
+function filtrarTabela(q,id){
+  const termo=String(q||"").toLowerCase();
+  document.querySelectorAll(`#${id} tbody tr`).forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(termo)?"":"none";});
+}
+function _openFestaMerito(id,origKey,origId){
+  const origem=origKey&&origId?((DATA[origKey]||[]).find(r=>r.id===origId)||{}):{};
+  const rec=id?(DATA.festa_trabalhador||[]).find(r=>r.id===id)||{}:{nome:origem.nome||"",responsavel:origem.responsavel||"",telefone:festaTelefonePrincipal(origem)};
   modal(id?"Editar Indicação":"Nova Indicação — Festa do Trabalhador",
   `<datalist id="dl_emp2">${[...new Set(MODULES.filter(m=>m.key!=="festa_trabalhador").flatMap(m=>(DATA[m.key]||[]).map(r=>r.nome).filter(Boolean)))].sort().map(n=>`<option value="${_esc(n)}">`).join("")}</datalist>
   <div style="display:grid;gap:10px;min-width:340px">
     <label style="font-size:12.5px;font-weight:600">Nome da empresa
       <input id="ft_nome" class="inp" list="dl_emp2" value="${_esc(rec.nome||"")}" placeholder="Digite ou selecione do sistema...">
+    </label>
+    <label style="font-size:12.5px;font-weight:600">Responsável
+      <input id="ft_responsavel" class="inp" value="${_esc(rec.responsavel||"")}" placeholder="Responsável / proprietário">
+    </label>
+    <label style="font-size:12.5px;font-weight:600">Telefone principal de contato
+      <input id="ft_telefone" class="inp" value="${_esc(rec.telefone||"")}" placeholder="Telefone ou WhatsApp">
     </label>
     <label style="font-size:12.5px;font-weight:600">Nome do homenageado
       <input id="ft_homenageado" class="inp" value="${_esc(rec.homenageado||"")}" placeholder="Nome completo">
@@ -1909,6 +1942,8 @@ function _openFestaMerito(id){
 
 async function _salvarFestaMerito(id){
   const nome=document.getElementById("ft_nome").value.trim();
+  const responsavel=document.getElementById("ft_responsavel").value.trim();
+  const telefone=document.getElementById("ft_telefone").value.trim();
   const hom=document.getElementById("ft_homenageado").value.trim();
   const cargo=document.getElementById("ft_cargo").value.trim();
   const obs=document.getElementById("ft_obs").value.trim();
@@ -1917,9 +1952,9 @@ async function _salvarFestaMerito(id){
   if(!DATA.festa_trabalhador)DATA.festa_trabalhador=[];
   if(id){
     const i=DATA.festa_trabalhador.findIndex(r=>r.id===id);
-    if(i>=0)DATA.festa_trabalhador[i]={...DATA.festa_trabalhador[i],nome,homenageado:hom,cargo,observacoes:obs};
+    if(i>=0)DATA.festa_trabalhador[i]={...DATA.festa_trabalhador[i],nome,responsavel,telefone,homenageado:hom,cargo,observacoes:obs};
   }else{
-    DATA.festa_trabalhador.push({id:"festa-"+Date.now(),nome,homenageado:hom,cargo,observacoes:obs,publicar_guia:"Não"});
+    DATA.festa_trabalhador.push({id:"festa-"+Date.now(),nome,responsavel,telefone,homenageado:hom,cargo,observacoes:obs,publicar_guia:"Não"});
   }
   if(!(await saveData())){DATA=prev;return;}
   logAudit(id?"Edição":"Criação","Festa do Trabalhador",nome);
@@ -1936,6 +1971,8 @@ function gerarListaFesta(){
     <tr style="background:${i%2===0?"#fff":"#f8fafc"}">
       <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#1e3a8a">${i+1}º</td>
       <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px"><b>${_escR(r.nome||"—")}</b></td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px">${_escR(r.responsavel||"—")}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px">${_escR(r.telefone||"—")}</td>
       <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px">${_escR(r.homenageado||"—")}</td>
       <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#4b5563">${_escR(r.cargo||"—")}</td>
     </tr>`).join("");
@@ -1957,9 +1994,9 @@ function gerarListaFesta(){
     <div class="medal">🏅</div>
   </div>
   <table>
-    <thead><tr><th>#</th><th>Empresa</th><th>Homenageado</th><th>Cargo / Função</th></tr></thead>
+    <thead><tr><th>#</th><th>Empresa</th><th>Responsável</th><th>Telefone</th><th>Homenageado</th><th>Cargo / Função</th></tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td colspan="4">Total de indicados: <b>${lista.length}</b> · Gerado pelo Sistema de Gestão do Turismo de Itatinga</td></tr></tfoot>
+    <tfoot><tr><td colspan="6">Total de indicados: <b>${lista.length}</b> · Gerado pelo Sistema de Gestão do Turismo de Itatinga</td></tr></tfoot>
   </table>
   </main>
   </body></html>`;
