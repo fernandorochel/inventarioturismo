@@ -806,8 +806,21 @@ function renderAprovacaoCadastros(){
   }
   document.getElementById("main").innerHTML=h;
 }
-function hasDescritivo(r){return !!(r&&String(r.descricao||"").trim());}
-const MODULOS_SEM_EXIGENCIA_FOTO=new Set(["demanda_turistica","atas_comtur","horarios_onibus","cursos_capacitacao"]);
+const RESPONSAVEL_FIELDS=["responsavel","artesao_nome","proprietario","contato_nome","orgao_resp"];
+const DESCRITIVO_FIELDS=["descricao","descritivo","produtos_servicos","produtos","principais_produtos","caracteristicas","principais_pratos","servicos","atividade","observacoes","atracoes","segmentos","segmento_servicos","servicos_oferecidos"];
+function firstFilledField(r,fields){
+  for(const f of fields){
+    const v=r&&r[f];
+    if(v!==undefined&&v!==null&&String(v).trim())return String(v).trim();
+  }
+  return "";
+}
+function moduleHasAnyField(m,fields){return !!(m&&allFields(m).some(f=>fields.includes(f[0])));}
+function moduloExigeResponsavel(m){return moduleHasAnyField(m,RESPONSAVEL_FIELDS);}
+function moduloExigeDescritivo(m){return moduleHasAnyField(m,DESCRITIVO_FIELDS);}
+function hasResponsavel(r){return !!firstFilledField(r,RESPONSAVEL_FIELDS);}
+function hasDescritivo(r){return !!firstFilledField(r,DESCRITIVO_FIELDS);}
+const MODULOS_SEM_EXIGENCIA_FOTO=new Set(["demanda_turistica","atas_comtur","horarios_onibus","cursos_capacitacao","cantores_locais","empresas_brinquedos","transp_interno"]);
 function exigeFotoGuia(key,r){
   return r&&r.publicar_guia==="Sim"&&r.status!=="Inativo"&&!MODULOS_SEM_EXIGENCIA_FOTO.has(key);
 }
@@ -828,8 +841,10 @@ function renderDashboard(){
   const ativo=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.status==="Ativo").length,0);
   const pend=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.status==="Pendente"||r.status==="Em revisão").length,0);
   const comFoto=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(hasFotoCadastro).length,0);
-  const comResp=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.responsavel&&r.responsavel.trim()).length,0);
-  const comDesc=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(hasDescritivo).length,0);
+  const respTotal=MODULES.reduce((s,m)=>s+(moduloExigeResponsavel(m)?(DATA[m.key]||[]).length:0),0);
+  const comResp=MODULES.reduce((s,m)=>s+(moduloExigeResponsavel(m)?(DATA[m.key]||[]).filter(hasResponsavel).length:0),0);
+  const descTotal=MODULES.reduce((s,m)=>s+(moduloExigeDescritivo(m)?(DATA[m.key]||[]).length:0),0);
+  const comDesc=MODULES.reduce((s,m)=>s+(moduloExigeDescritivo(m)?(DATA[m.key]||[]).filter(hasDescritivo).length:0),0);
   const noGuia=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.publicar_guia==="Sim").length,0);
   const totalLeitos=(DATA.hospedagem||[]).reduce((s,r)=>s+(parseInt(r.n_leitos,10)||0),0);
   const modComReg=MODULES.filter(m=>(DATA[m.key]||[]).length>0).length;
@@ -865,9 +880,9 @@ function renderDashboard(){
   if(modSemReg>0)alertas.push({t:"warn",msg:`${modSemReg} ${modSemReg===1?"módulo sem cadastro":"módulos sem cadastro"}`,rel:"semreg"});
   const semFotoGuia=pendenciasFotoGuia().length;
   if(semFotoGuia>0)alertas.push({t:"info",msg:`${semFotoGuia} ${semFotoGuia===1?"cadastro publicado":"cadastros publicados"} no Guia sem foto`,rel:"semfoto"});
-  const semResp=total-comResp;
+  const semResp=respTotal-comResp;
   if(semResp>0)alertas.push({t:"info",msg:`${semResp} ${semResp===1?"cadastro sem responsável informado":"cadastros sem responsável informado"}`,rel:"semresp"});
-  const semDesc=total-comDesc;
+  const semDesc=descTotal-comDesc;
   if(semDesc>0)alertas.push({t:"info",msg:`${semDesc} ${semDesc===1?"cadastro sem descritivo":"cadastros sem descritivo"}`,rel:"semdesc"});
 
   /* ── feed recentes ── */
@@ -923,8 +938,8 @@ function renderDashboard(){
     <div class="kpi-card" style="--kpi-color:#7c3aed;--kpi-bg:#f5f3ff">
       <div class="kpi-head"><div class="kpi-icon" style="background:#f5f3ff"><svg viewBox="0 0 24 24" stroke="#7c3aed"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><div class="kpi-lbl">Com responsável</div></div></div>
       <div class="kpi-val">${comResp}</div>
-      <div class="kpi-sub"><span class="${pct(comResp,total)>=50?'badge-up':'badge-warn'}">${pct(comResp,total)}%</span> dos cadastros</div>
-      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${pct(comResp,total)}%;background:#7c3aed"></div></div>
+      <div class="kpi-sub"><span class="${pct(comResp,respTotal)>=50?'badge-up':'badge-warn'}">${pct(comResp,respTotal)}%</span> das fichas aplicáveis</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${pct(comResp,respTotal)}%;background:#7c3aed"></div></div>
     </div>
     <div class="kpi-card" style="--kpi-color:#0f766e;--kpi-bg:#f0fdfa">
       <div class="kpi-head"><div class="kpi-icon" style="background:#f0fdfa"><svg viewBox="0 0 24 24" stroke="#0f766e"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div><div><div class="kpi-lbl">Autorizados no Guia</div></div></div>
@@ -1785,7 +1800,7 @@ function relatorioAlerta(tipo){
     const lista=pendenciasFotoGuia();
     if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros publicados no Guia possuem foto.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro publicado":"cadastros publicados"}</b> no Guia sem foto. Módulos internos e informativos sem exigência de imagem não entram nesta lista.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro publicado":"cadastros publicados"}</b> no Guia sem foto. Módulos internos, informativos e categorias ocultas no Guia não entram nesta lista.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
@@ -1810,33 +1825,27 @@ function relatorioAlerta(tipo){
     titulo="👤 Cadastros sem responsável preenchido";
     const lista=[];
     MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
-      const semResp=!r.responsavel||r.responsavel.trim()==="";
-      const semTel=!r.resp_telefone||r.resp_telefone.trim()==="";
-      if(semResp||semTel)lista.push({mod:m.label,icon:m.icon,nome:r.nome||"(sem nome)",status:r.status||"—",resp:r.responsavel||"—",tel:r.resp_telefone||"—",semResp,semTel});
+      if(!moduloExigeResponsavel(m))return;
+      if(!hasResponsavel(r))lista.push({mod:m.label,icon:m.icon,nome:r.nome||"(sem nome)",status:r.status||"—",resp:firstFilledField(r,RESPONSAVEL_FIELDS)||"—",tel:r.resp_telefone||r.telefone||"—"});
     }));
     if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros possuem responsável preenchido.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro":"cadastros"}</b> com responsável ou telefone ausente.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro":"cadastros"}</b> sem responsável informado. A conferência considera apenas módulos que possuem campo de responsável na ficha.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Módulo</th>
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Nome do Empreendimento</th>
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Responsável</th>
-          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Telefone</th>
-          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Pendência</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">Telefone de contato</th>
         </tr></thead><tbody>`;
       lista.forEach((r,i)=>{
-        const flags=[];
-        if(r.semResp)flags.push('<span style="background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 6px;font-size:10px">sem nome</span>');
-        if(r.semTel)flags.push('<span style="background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 6px;font-size:10px">sem telefone</span>');
         corpo+=`<tr style="background:${i%2?'#f8fafc':'#fff'}">
           <td style="padding:6px 10px;border:1px solid #e2e8f0">${i+1}</td>
           <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.icon} ${r.mod}</td>
           <td style="padding:6px 10px;border:1px solid #e2e8f0"><b>${r.nome}</b></td>
           <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.resp==="—"?'<i style="color:#9ca3af">não informado</i>':r.resp}</td>
           <td style="padding:6px 10px;border:1px solid #e2e8f0">${r.tel==="—"?'<i style="color:#9ca3af">não informado</i>':r.tel}</td>
-          <td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap">${flags.join(" ")}</td>
         </tr>`;});
       corpo+="</tbody></table>";
     }
@@ -1846,11 +1855,11 @@ function relatorioAlerta(tipo){
     titulo="📝 Cadastros sem descritivo";
     const lista=[];
     MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
-      if(!hasDescritivo(r))lista.push({mod:m.label,icon:m.icon,nome:r.nome||r.local_nome||r.artesao_nome||"(sem nome)",status:r.status||"—",cat:r.categoria||"—"});
+      if(moduloExigeDescritivo(m)&&!hasDescritivo(r))lista.push({mod:m.label,icon:m.icon,nome:r.nome||r.local_nome||r.artesao_nome||"(sem nome)",status:r.status||"—",cat:r.categoria||"—"});
     }));
     if(!lista.length){corpo='<p style="color:#065f46">Todos os cadastros possuem descritivo preenchido.</p>';}
     else{
-      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro":"cadastros"}</b> sem descritivo preenchido.</p>`;
+      corpo=`<p style="margin-bottom:12px;color:#6b7280">Total: <b>${lista.length} ${lista.length===1?"cadastro":"cadastros"}</b> sem descritivo preenchido. A conferência considera descrição, produtos, serviços, pratos, atividades e observações quando esses campos existem na ficha.</p>`;
       corpo+=`<table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe;color:#1e3a8a">
           <th style="padding:7px 10px;text-align:left;border:1px solid #bfdbfe">#</th>
