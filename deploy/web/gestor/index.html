@@ -682,15 +682,15 @@ function canAdmin(){return CURRENT&&CURRENT.role==="admin";}
 
 /* ===== sidebar ===== */
 let currentView="dashboard";
-const EXTRA={dashboard:{label:"Painel",icon:"📊"},exportar:{label:"Relatórios e Exportação",icon:"📤"},usuarios:{label:"Administração — Usuários",icon:"👥"},auditoria:{label:"Administração — Auditoria",icon:"📋"}};
+const EXTRA={dashboard:{label:"Painel",icon:"📊"},aprovacao:{label:"Aprovação de Cadastros",icon:"✅"},exportar:{label:"Relatórios e Exportação",icon:"📤"},usuarios:{label:"Administração — Usuários",icon:"👥"},auditoria:{label:"Administração — Auditoria",icon:"📋"}};
 function meta(k){return MODMAP[k]||SINGLE_CFGS[k]||({municipio:MUNICIPIO,caractur:CARACTUR}[k])||EXTRA[k]||{label:k,icon:"•"};}
 function buildSidebar(){
   const topFixed=["dashboard"];
   const topRest=["festa_trabalhador","demanda_turistica","atas_comtur","municipio","caractur","info_turisticas","sinalizacao_tur"].sort((a,b)=>meta(a).label.localeCompare(meta(b).label,"pt",{sensitivity:"base"}));
   const top=[...topFixed,...topRest];
-  const sys=["exportar",...(canAdmin()?["usuarios","auditoria"]:[])];
+  const sys=["aprovacao","exportar",...(canAdmin()?["usuarios","auditoria"]:[])];
   let h="";
-  const add=(k)=>{const m=meta(k);const cnt="";
+  const add=(k)=>{const m=meta(k);const n=k==="aprovacao"?countApprovalRecords():0;const cnt=n?`<span class="badge">${n}</span>`:"";
     h+=`<a id="nav-${k}" onclick="go('${k}')"><span class="ic">${m.icon||"•"}</span><span>${m.label}</span>${cnt}</a>`;};
   top.forEach(add);
   const inv=["municipio","caractur",...NAV.flatMap(([g,keys])=>keys)].filter(k=>k!=="info_turisticas"&&k!=="caractur"&&k!=="municipio"&&k!=="sinalizacao_tur"&&k!=="demanda_turistica"&&k!=="atas_comtur").sort((a,b)=>meta(a).label.localeCompare(meta(b).label,'pt',{sensitivity:'base'}));
@@ -714,6 +714,7 @@ function go(view){
   }
   currentView=view;setActive(view);closeSide();
   if(view==="dashboard")return renderDashboard();
+  if(view==="aprovacao")return renderAprovacaoCadastros();
   if(view==="exportar")return renderExport();
   if(view==="usuarios")return renderUsers();
   if(view==="auditoria")return renderAuditLog();
@@ -723,6 +724,50 @@ function go(view){
   renderDashboard();}
 /* ===== dashboard ===== */
 function totalRecords(){return MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).length,0);}
+function approvalRecords(){
+  const out=[];
+  MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
+    if(r.status==="Pendente"||r.status==="Em revisão"){
+      out.push({key:m.key,mod:m.label,icon:m.icon||"•",id:r.id,nome:r.nome||"(sem nome)",categoria:r.categoria||"—",status:r.status||"—",telefone:r.telefone||r.resp_telefone||"",responsavel:r.responsavel||"",publicar:r.publicar_guia||"—",foto:!!r.foto});
+    }
+  }));
+  return out.sort((a,b)=>a.status.localeCompare(b.status,"pt",{sensitivity:"base"})||a.mod.localeCompare(b.mod,"pt",{sensitivity:"base"})||a.nome.localeCompare(b.nome,"pt",{sensitivity:"base"}));
+}
+function countApprovalRecords(){return approvalRecords().length;}
+function renderAprovacaoCadastros(){
+  const todos=approvalRecords();
+  const pend=todos.filter(r=>r.status==="Pendente").length;
+  const rev=todos.filter(r=>r.status==="Em revisão").length;
+  let h=`<div class="crumb">Sistema › Aprovação</div>
+  <div class="page-head"><div><h2>✅ Aprovação de Cadastros</h2><p>${todos.length} cadastro(s) pendente(s) ou em revisão para conferência</p></div>
+    <button class="btn-sec btn-sm" onclick="go('dashboard')">Voltar ao painel</button></div>
+  <div class="cards" style="margin-bottom:16px">
+    <div class="stat" style="border-color:#f59e0b"><div class="ic">⏳</div><div class="v">${pend}</div><div class="l">pendente(s) de aprovação</div></div>
+    <div class="stat" style="border-color:#2563B0"><div class="ic">🔎</div><div class="v">${rev}</div><div class="l">em revisão</div></div>
+    <div class="stat" style="border-color:#16a34a"><div class="ic">🗂️</div><div class="v">${todos.length}</div><div class="l">total na fila de aprovação</div></div>
+  </div>`;
+  if(!todos.length){
+    h+=`<div class="tablewrap"><div class="empty">Nenhum cadastro aguardando aprovação no momento.</div></div>`;
+  }else{
+    h+=`<div class="tablewrap"><table><thead><tr><th>Módulo</th><th>Cadastro</th><th>Categoria</th><th>Status</th><th>Guia</th><th>Foto</th><th style="text-align:right">Ações</th></tr></thead><tbody>`;
+    todos.forEach(r=>{
+      h+=`<tr class="row" onclick="openDetail('${r.key}','${r.id}')">
+        <td>${r.icon} ${r.mod}</td>
+        <td><b>${r.nome}</b>${r.responsavel?`<br><span style="font-size:11.5px;color:var(--cinza-claro)">Responsável: ${r.responsavel}</span>`:""}${r.telefone?`<br><span style="font-size:11.5px;color:var(--cinza-claro)">Telefone: ${r.telefone}</span>`:""}</td>
+        <td><span class="tag">${r.categoria}</span></td>
+        <td><span class="pill ${pillClass(r.status)}">${r.status}</span></td>
+        <td>${r.publicar}</td>
+        <td>${r.foto?"Com foto":"Sem foto"}</td>
+        <td onclick="event.stopPropagation()"><div class="rowact">
+          <button class="iconbtn" onclick="openDetail('${r.key}','${r.id}')">Ver</button>
+          ${canEdit()?`<button class="iconbtn" onclick="openForm('${r.key}','${r.id}')">Revisar</button>`:""}
+        </div></td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }
+  document.getElementById("main").innerHTML=h;
+}
 function hasDescritivo(r){return !!(r&&String(r.descricao||"").trim());}
 const MODULOS_SEM_EXIGENCIA_FOTO=new Set(["demanda_turistica","atas_comtur","horarios_onibus","cursos_capacitacao"]);
 function exigeFotoGuia(key,r){
@@ -1249,7 +1294,11 @@ async function saveForm(key,id){
   else{obj.id=key+"-"+Date.now();DATA[key].push(obj);}
   if(!(await saveData())){DATA=prev;return;}
   FORM_GUARD.dirty=false;
-  logAudit(id?"Edição":"Criação",MODMAP[key]?MODMAP[key].label:key,obj.nome);closeModal(true);buildSidebar();setActive(key);renderModule(key);toast(id?"Registro atualizado":"Registro cadastrado");
+  const voltaAprovacao=currentView==="aprovacao";
+  logAudit(id?"Edição":"Criação",MODMAP[key]?MODMAP[key].label:key,obj.nome);closeModal(true);buildSidebar();
+  if(voltaAprovacao){setActive("aprovacao");renderAprovacaoCadastros();}
+  else{setActive(key);renderModule(key);}
+  toast(id?"Registro atualizado":"Registro cadastrado");
 }
 function delRecord(key,id){if(!canEdit())return;const r=DATA[key].find(x=>x.id===id);
   modal("Excluir registro",`<p>Tem certeza que deseja excluir <b>${r.nome}</b>? Esta ação não pode ser desfeita.</p>`,
