@@ -249,6 +249,7 @@ let CURRENT=null;
 const OPT={
   status:["Ativo","Pendente","Em revisão","Inativo"],
   simnao:["Sim","Não","Parcial"],
+  simnao_confirmar:["Sim","Não","A confirmar"],
   publicar:["Sim","Não"],
   prop:["Pública","Privada","Mista"],
   entrada:["Gratuita","Paga","Mediante agendamento"],
@@ -1376,9 +1377,10 @@ const CARACTUR={icon:"🧭",label:"Caracterização do Município em Turismo",se
    ["responsavel","Responsável","text"],["endereco","Endereço","text"],
    ["telefone","Telefone","tel"],["email","E-mail","email"],["site","Site oficial de turismo","url"]]},
  {t:"Profissionais de turismo",f:[
-   ["tem_profissionais","Possui profissionais formados em turismo?","sel","simnao"],
-   ["qtd_tecnicos","Quantidade de técnicos em turismo","num"],
-   ["qtd_bachareis","Quantidade de bacharéis em turismo","num"]]},
+   ["tem_profissionais","Possui profissionais formados em turismo?","sel","simnao_confirmar"],
+   ["qtd_tecnicos","Quantidade de técnicos em turismo","text"],
+   ["qtd_bachareis","Quantidade de bacharéis em turismo","text"],
+   ["observacao_profissionais","Observação","area"]]},
  {t:"COMTUR",f:[
    ["tem_comtur","Possui COMTUR?","sel","simnao"],
    ["comtur_presidente","Nome do presidente","text"],
@@ -1410,7 +1412,8 @@ aventura_modalidades:{icon:"🧗",label:"Aventura - Modalidades",grupo:"E – Se
   if(SINGLE_CFGS.tipologia&&SINGLE_CFGS.aventura_modalidades){
     const tSec={t:"Vocação — Tipologia turística (existente/potencial/inexistente)",f:SINGLE_CFGS.tipologia.sections[0].f};
     const mSec={t:"Vocação — Modalidades de aventura (existente/potencial/inexistente)",f:SINGLE_CFGS.aventura_modalidades.sections[0].f};
-    CARACTUR.sections.push(tSec,mSec);
+    const obsSec={t:"Observação sobre a classificação turística",f:[["observacao_tipologia","Observação","area"]]};
+    CARACTUR.sections.push(tSec,obsSec,mSec);
     window.VOC_TIP=tSec.f.map(f=>({name:f[0],label:f[1]}));
     window.VOC_MOD=mSec.f.map(f=>({name:f[0],label:f[1]}));
     delete SINGLE_CFGS.tipologia; delete SINGLE_CFGS.aventura_modalidades;
