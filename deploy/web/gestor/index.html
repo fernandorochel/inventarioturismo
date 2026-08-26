@@ -494,6 +494,44 @@ function driveImageUrl(src){
 }
 function isFotoImg(src,mime){return /^image\//i.test(mime||"")||/^data:image\//i.test(src||"")||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(src||"")||!!driveIdFromUrl(src);}
 function fotoSrc(src,mime){if(!src)return"";if(/^data:image\//i.test(src))return src;if(driveIdFromUrl(src))return driveImageUrl(src);return src;}
+function _mediaCandidates(value){
+  if(!value)return[];
+  if(Array.isArray(value))return value.flatMap(_mediaCandidates);
+  if(typeof value==="object"){
+    const src=value.imageUrl||value.directUrl||value.downloadUrl||value.viewUrl||value.url||value.src||value.href||value.link||value.id;
+    return src?[{src,nome:value.name||value.nome||value.fileName||value.filename||"",mime:value.mimeType||value.mime||value.type||"",viewUrl:value.viewUrl||value.url||src}]:[];
+  }
+  const text=String(value||"").trim();
+  if(!text)return[];
+  if((text.startsWith("[")||text.startsWith("{"))&&text.length<200000){
+    try{return _mediaCandidates(JSON.parse(text));}catch(e){}
+  }
+  return text.split(/\s*\|\s*|\s*,\s*(?=https?:|\/uploads\/|data:)/i).filter(Boolean).map(src=>({src:src.trim(),nome:"",mime:"",viewUrl:src.trim()}));
+}
+function firstMediaInfo(r){
+  if(!r)return null;
+  const fields=["foto","fotos","imagem","imagens","image","images","arquivo","arquivos","foto_view_url","foto_drive_id"];
+  for(const field of fields){
+    const list=_mediaCandidates(r[field]);
+    for(const item of list){
+      let src=String(item.src||"").trim();
+      if(!src)continue;
+      if(field==="foto_drive_id"&&!/^local:|^https?:|^\/|^data:/i.test(src))src=`https://drive.google.com/thumbnail?id=${encodeURIComponent(src)}&sz=w1600`;
+      return {
+        src,
+        nome:item.nome||r.foto_nome||r.imagem_nome||"Arquivo anexado",
+        mime:item.mime||r.foto_mime||r.imagem_mime||"",
+        viewUrl:item.viewUrl||r.foto_view_url||src
+      };
+    }
+  }
+  return null;
+}
+function hasFotoCadastro(r){
+  const media=firstMediaInfo(r);
+  if(!media||!media.src)return false;
+  return isFotoImg(media.src,media.mime)||/^\/uploads\//i.test(media.src)||/^https?:\/\//i.test(media.src)||/^data:image\//i.test(media.src);
+}
 function absMediaUrl(src){
   const s=String(src||"").trim();
   if(!s||/^(data:|blob:|https?:)/i.test(s))return s;
@@ -728,7 +766,7 @@ function approvalRecords(){
   const out=[];
   MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
     if(r.status==="Pendente"||r.status==="Em revisão"){
-      out.push({key:m.key,mod:m.label,icon:m.icon||"•",id:r.id,nome:r.nome||"(sem nome)",categoria:r.categoria||"—",status:r.status||"—",telefone:r.telefone||r.resp_telefone||"",responsavel:r.responsavel||"",publicar:r.publicar_guia||"—",foto:!!r.foto});
+      out.push({key:m.key,mod:m.label,icon:m.icon||"•",id:r.id,nome:r.nome||"(sem nome)",categoria:r.categoria||"—",status:r.status||"—",telefone:r.telefone||r.resp_telefone||"",responsavel:r.responsavel||"",publicar:r.publicar_guia||"—",foto:hasFotoCadastro(r)});
     }
   }));
   return out.sort((a,b)=>a.status.localeCompare(b.status,"pt",{sensitivity:"base"})||a.mod.localeCompare(b.mod,"pt",{sensitivity:"base"})||a.nome.localeCompare(b.nome,"pt",{sensitivity:"base"}));
@@ -776,7 +814,7 @@ function exigeFotoGuia(key,r){
 function pendenciasFotoGuia(){
   const lista=[];
   MODULES.forEach(m=>(DATA[m.key]||[]).forEach(r=>{
-    if(exigeFotoGuia(m.key,r)&&(!r.foto||String(r.foto).trim()==="")){
+    if(exigeFotoGuia(m.key,r)&&!hasFotoCadastro(r)){
       lista.push({mod:m.label,icon:m.icon,nome:r.nome||r.local_nome||r.artesao_nome||"(sem nome)",status:r.status||"—",cat:r.categoria||"—"});
     }
   }));
@@ -789,7 +827,7 @@ function renderDashboard(){
   const serv=grp("C – Serviços e Equipamentos"),atr=grp("D – Atrativos Turísticos"),seg=grp("E – Segmentação");
   const ativo=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.status==="Ativo").length,0);
   const pend=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.status==="Pendente"||r.status==="Em revisão").length,0);
-  const comFoto=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.foto&&r.foto.length>10).length,0);
+  const comFoto=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(hasFotoCadastro).length,0);
   const comResp=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.responsavel&&r.responsavel.trim()).length,0);
   const comDesc=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(hasDescritivo).length,0);
   const noGuia=MODULES.reduce((s,m)=>s+(DATA[m.key]||[]).filter(r=>r.publicar_guia==="Sim").length,0);
@@ -1237,7 +1275,7 @@ function openDetail(key,id){
     body+=`<div class="det-sec">${sec.t}</div>`;
     sec.f.forEach(([fn,fl,t])=>{
       let v=r[fn];
-      if(t==="photo"){v=r.foto?fotoImg(r.foto,240,180,r.foto_nome,r.foto_mime):"—";}
+      if(t==="photo"){const media=firstMediaInfo(r);v=media?fotoImg(media.src,240,180,media.nome,media.mime):"—";}
       else if(!v){v="—";}
       else if(fn==="maps"){v=`<a href="${r[fn]}" target="_blank" style="word-break:break-all">${r[fn]}</a> <a href="${r[fn]}" target="_blank" style="white-space:nowrap">📍 Abrir no Google Maps ↗</a>`;}
       else if(t==="url"){v=`<a href="${r[fn]}" target="_blank">${r[fn]} ↗</a>`;}
@@ -1267,12 +1305,13 @@ function fieldInput(m,fn,fl,t,optKey,val){
 function openForm(key,id){
   if(!canEdit())return toast("Seu perfil é somente leitura.");
   const m=MODMAP[key];const r=id?(DATA[key]||[]).find(x=>x.id===id):{};
-  window._formFoto=(r&&r.foto)?r.foto:"";
-  window._formArquivo=(r&&r.foto)?{id:r.foto_drive_id||"",nome:r.foto_nome||"",mime:r.foto_mime||"",url:r.foto,viewUrl:r.foto_view_url||""}:null;
+  const media=firstMediaInfo(r);
+  window._formFoto=media?media.src:((r&&r.foto)?r.foto:"");
+  window._formArquivo=media?{id:(r&&r.foto_drive_id)||"",nome:media.nome||"",mime:media.mime||"",url:media.src,viewUrl:media.viewUrl||media.src}:null;
   let body="";
   m.sections.forEach(sec=>{
     body+=`<div class="form-sec">${sec.t}</div><div class="formgrid">`;
-    sec.f.forEach(([fn,fl,t,optKey])=>{body+=fieldInput(m,fn,fl,t,optKey,r?r[fn]:"");});
+    sec.f.forEach(([fn,fl,t,optKey])=>{body+=fieldInput(m,fn,fl,t,optKey,t==="photo"&&media?media.src:(r?r[fn]:""));});
     body+=`</div>`;
   });
   modal(`${id?"Editar":"Novo"} — ${m.label}`,body,
@@ -1500,7 +1539,8 @@ function _coletarRel(items,filtros){
         if(sec.t)body+=`<div class="sub">${_escR(sec.t)}</div>`;
         vals.forEach(([fn,fl])=>{body+=`<div class="row"><b>${_escR(fl)}:</b> ${_escR(r[fn])}</div>`;});
       });
-      if(r.foto)body+=`<div class="foto-label">Arquivo / foto anexada</div>${fotoRelatorioImg(r.foto,480,240,r.foto_nome,r.foto_mime)}`;
+      const media=firstMediaInfo(r);
+      if(media)body+=`<div class="foto-label">Arquivo / foto anexada</div>${fotoRelatorioImg(media.src,480,240,media.nome,media.mime)}`;
       body+=`</div>`;});
   });
   return {body,total};
