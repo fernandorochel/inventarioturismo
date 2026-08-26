@@ -1117,7 +1117,7 @@ function exportarPainel(){
   const sec=(title,inner)=>`<h2>${title}</h2>${inner||'<p style="font-size:12px;color:#777">Sem dados.</p>'}`;
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Painel — Gestao do Turismo de Itatinga</title>
   ${_printCSS(`.r{margin:8px 0}.rl{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:3px}.rl b{color:#1A3A6E;white-space:nowrap}.rl i{color:#888;font-weight:400;font-style:normal}.rb{background:#eef2f8;border-radius:6px;height:9px;overflow:hidden}.rb>div{height:100%;background:linear-gradient(90deg,#2563B0,#1A3A6E);border-radius:6px}`)}</head>
-  <body><main class="print-page"><header><img src="${LOGO_PREF}"><div><div class="t1">Gestao do Turismo de Itatinga</div><div class="t2">Painel — Centro de Operacoes · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s) no inventario</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
+  <body><main class="print-page"><header><img src="${LOGO_TUR}"><div><div class="t1">Painel do Turismo de Itatinga</div><div class="t2">Centro de Operações do Inventário Turístico Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_PREF}" style="margin-left:auto;max-width:76pt"></header>
   <div class="bar"><button onclick="window.print()">\U0001F5A8️ Imprimir / Salvar PDF</button></div>
   ${sec(`Distribuicao por modulo — ${totalAtivos} cadastros ativos (100%)`,barRows(byMod,totalAtivos))}
   ${sec(`Arquiteturas — ${arq.total} cadastradas (100%)`,barRows(arq.data,arq.total))}
@@ -1430,37 +1430,48 @@ function _itemDeModulo(m){return {label:m.label,icon:m.icon,fields:allFields(m),
 function _itemMunicipio(){return {label:MUNICIPIO.label,icon:MUNICIPIO.icon,fields:allFields(MUNICIPIO),recs:((DATA._municipio&&Object.keys(DATA._municipio).length)?[DATA._municipio]:[])};}
 function _printCSS(extra){
   return `<style>
-   @page{size:A4 portrait;margin:15mm 14mm 16mm 14mm}
+   @page{size:A4 portrait;margin:13mm 13mm 15mm 13mm}
    *{box-sizing:border-box}
+   :root{--azul:#1565c0;--azul-escuro:#0b3f79;--azul-claro:#29aee4;--verde:#43b649;--verde-claro:#8bcf55;--laranja:#f58220;--amarelo:#fdb515;--vermelho:#e53935;--texto:#243044;--linha:#d8e3ef;--fundo:#fbf8f0}
    html,body{margin:0;background:#fff}
-   body{font-family:Arial,Helvetica,sans-serif;color:#2D2D2D;font-size:10.5pt;line-height:1.35;mso-line-height-rule:exactly;padding:0}
-   .print-page{width:182mm;max-width:182mm;margin:0 auto}
-   .word-header{width:100%;border-collapse:collapse;border-bottom:3px solid #1A3A6E;margin:0 0 12pt 0;page-break-inside:avoid}
-   .word-header td{border:none;padding:0 0 8pt 0;vertical-align:middle}
-   .word-header .logo-left{height:36pt;max-width:95pt}
-   .word-header .logo-right{height:34pt;max-width:90pt}
-   .word-header .t1{font-size:15pt;font-weight:bold;color:#1A3A6E;margin:0}
-   .word-header .t2{font-size:9pt;color:#555;margin:2pt 0 0 0}
+   body{font-family:Inter,Montserrat,Segoe UI,Arial,Helvetica,sans-serif;color:var(--texto);font-size:10.3pt;line-height:1.42;mso-line-height-rule:exactly;padding:0}
+   .print-page{width:184mm;max-width:184mm;margin:0 auto;background:#fff}
+   .word-header{width:100%;border-collapse:separate;border-spacing:0;margin:0 0 13pt 0;page-break-inside:avoid;background:var(--fundo);border:1px solid var(--linha);border-radius:12pt;overflow:hidden}
+   .word-header td{border:none;padding:10pt 11pt;vertical-align:middle}
+   .word-header .brand-cell{width:118pt}
+   .word-header .seal-cell{width:82pt;text-align:right}
+   .word-header .logo-left{height:auto;max-height:50pt;max-width:110pt}
+   .word-header .logo-right{height:auto;max-height:42pt;max-width:76pt}
+   .word-header .t1{font-family:Montserrat,Inter,Segoe UI,Arial,sans-serif;font-size:17pt;font-weight:800;color:var(--azul-escuro);margin:0;letter-spacing:.01em}
+   .word-header .t2{font-size:9.5pt;color:#4b5b70;margin:2pt 0 0 0}
+   .word-header .identity-strip td{padding:0;height:7pt;background:linear-gradient(90deg,var(--azul) 0 16%,var(--azul-claro) 16% 30%,var(--verde) 30% 44%,var(--verde-claro) 44% 56%,var(--laranja) 56% 70%,var(--amarelo) 70% 84%,var(--vermelho) 84% 100%)}
+   header{display:flex;align-items:center;gap:12pt;margin:0 0 13pt;padding:10pt 11pt;background:var(--fundo);border:1px solid var(--linha);border-radius:12pt;page-break-inside:avoid;position:relative;overflow:hidden}
+   header:after{content:"";position:absolute;left:0;right:0;bottom:0;height:7pt;background:linear-gradient(90deg,var(--azul) 0 16%,var(--azul-claro) 16% 30%,var(--verde) 30% 44%,var(--verde-claro) 44% 56%,var(--laranja) 56% 70%,var(--amarelo) 70% 84%,var(--vermelho) 84% 100%)}
+   header img{height:auto;max-height:48pt;max-width:110pt;object-fit:contain}
+   header .t1{font-family:Montserrat,Inter,Segoe UI,Arial,sans-serif;font-size:16pt;font-weight:800;color:var(--azul-escuro);margin:0}
+   header .t2{font-size:9.3pt;color:#4b5b70;margin-top:2pt}
    h1,h2,h3{page-break-after:avoid}
-   h2{color:#1A3A6E;border-bottom:2px solid #2563B0;padding-bottom:4pt;margin:14pt 0 7pt;font-size:12.5pt}
-   h3{margin:0 0 6pt;color:#1A3A6E;font-size:11.5pt}
+   h2{color:var(--azul-escuro);border-bottom:0;padding:0 0 5pt;margin:14pt 0 8pt;font-size:13pt;font-family:Montserrat,Inter,Segoe UI,Arial,sans-serif;font-weight:800;position:relative}
+   h2:after{content:"";display:block;width:58mm;height:3pt;margin-top:5pt;border-radius:999px;background:linear-gradient(90deg,var(--azul),var(--verde),var(--laranja),var(--amarelo))}
+   h3{margin:0 0 6pt;color:var(--azul-escuro);font-size:11.8pt;font-family:Montserrat,Inter,Segoe UI,Arial,sans-serif;font-weight:800}
    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt;page-break-inside:auto}
-   th{background:#1A3A6E;color:#fff;padding:5pt 6pt;text-align:left;font-size:9pt}
-   td{padding:4pt 6pt;border:1px solid #dfe7f1;vertical-align:top}
+   th{background:var(--azul-escuro);color:#fff;padding:6pt 7pt;text-align:left;font-size:9pt}
+   td{padding:5pt 7pt;border:1px solid var(--linha);vertical-align:top}
    th,td{overflow-wrap:break-word;word-break:normal}
    tr{page-break-inside:avoid}
-   .rec{border:1px solid #d9e2ec;padding:8pt 9pt;margin:7pt 0;page-break-inside:avoid;background:#fff}
-   .row{font-size:9.5pt;line-height:1.35;margin:1.5pt 0;overflow-wrap:break-word;word-break:normal}.row b{color:#1A3A6E}
-   .sub{font-size:8.8pt;font-weight:bold;color:#2563B0;margin:7pt 0 3pt;text-transform:uppercase;letter-spacing:.02em}
-   .rec-img{width:auto;height:auto;max-width:150mm;max-height:65mm;margin-top:4pt;border:1px solid #cbd5e1;display:block;-ms-interpolation-mode:bicubic}
-   .foto-label{font-size:8.8pt;font-weight:bold;color:#2563B0;text-transform:uppercase;letter-spacing:.02em;margin-top:8pt}
+   .rec{border:1px solid var(--linha);border-left:5pt solid var(--azul);border-radius:8pt;padding:9pt 10pt;margin:8pt 0;page-break-inside:avoid;background:#fff;box-shadow:0 1pt 0 rgba(11,63,121,.05)}
+   .row{font-size:9.5pt;line-height:1.38;margin:2pt 0;overflow-wrap:break-word;word-break:normal}.row b{color:var(--azul-escuro)}
+   .sub{font-size:8.8pt;font-weight:800;color:var(--azul);margin:8pt 0 3pt;text-transform:uppercase;letter-spacing:.04em}
+   .rec-img{width:auto;height:auto;max-width:150mm;max-height:64mm;margin-top:5pt;border:1px solid var(--linha);border-radius:6pt;display:block;-ms-interpolation-mode:bicubic}
+   .foto-label{font-size:8.8pt;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.04em;margin-top:8pt}
+   .report-footer{margin-top:14pt;padding-top:7pt;border-top:1px solid var(--linha);font-size:8.6pt;color:#526173;text-align:center}
    .bar,.no-print{margin:0 0 12px;text-align:right}
-   button{background:#1A3A6E;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer}
+   button{background:var(--azul-escuro);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:12px;cursor:pointer}
    @media print{
     body{padding:0}
     .print-page{width:100%;max-width:none}
     .bar,.no-print{display:none!important}
-    a{color:#1A3A6E;text-decoration:none}
+    a{color:var(--azul-escuro);text-decoration:none}
    }
    ${extra||""}
   </style>`;
@@ -1495,9 +1506,9 @@ function _docHTML(body,total,showPrintButton=true){
   const printButton=showPrintButton?`<div class="bar"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>`:"";
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório — Gestão do Turismo de Itatinga</title>
   ${_printCSS()}</head>
-  <body><main class="print-page"><table class="word-header"><tr><td style="width:100pt"><img class="logo-left" src="${LOGO_PREF}"></td><td><div class="t1">Gestão do Turismo de Itatinga</div><div class="t2">Relatório do Inventário Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></td><td style="width:95pt;text-align:right"><img class="logo-right" src="${LOGO_TUR}"></td></tr></table>
+  <body><main class="print-page"><table class="word-header"><tr><td class="brand-cell"><img class="logo-left" src="${LOGO_TUR}"></td><td><div class="t1">Relatório do Turismo de Itatinga</div><div class="t2">Inventário Turístico Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></td><td class="seal-cell"><img class="logo-right" src="${LOGO_PREF}"></td></tr><tr class="identity-strip"><td colspan="3"></td></tr></table>
   ${printButton}
-  ${body}</main></body></html>`;
+  ${body}<div class="report-footer">Turismo Itatinga · Prefeitura Municipal de Itatinga/SP</div></main></body></html>`;
 }
 function exportarPDF(items,filtros){
   const {body,total}=_coletarRel(items,filtros);
@@ -1552,7 +1563,7 @@ function gerarListaResponsaveis(){
   ${_printCSS(`tr:nth-child(even) td{background:#f8fafc} h2{border-bottom:0;margin-bottom:10px}`)}</head>
   <body>
   <main class="print-page">
-  <header><img src="${LOGO_PREF}"><div><div class="t1">Lista de Responsáveis — Turismo de Itatinga</div><div class="t2">Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_TUR}" style="margin-left:auto"></header>
+  <header><img src="${LOGO_TUR}"><div><div class="t1">Lista de Responsáveis — Turismo de Itatinga</div><div class="t2">Inventário Turístico Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_PREF}" style="margin-left:auto;max-width:76pt"></header>
   <div class="bar"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
   <h2>👤 Contatos dos Responsáveis por Empreendimento</h2>
   <table><thead><tr><th>Módulo</th><th>Nome do Empreendimento</th><th>Responsável</th><th>Telefone / WhatsApp</th></tr></thead>
