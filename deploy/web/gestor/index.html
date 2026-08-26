@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão do Turismo de Itatinga</title>
+<title>Inventário Municipal de Turismo</title>
 <meta name="theme-color" content="#1A3A6E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -205,7 +205,7 @@
 <div id="login">
   <div class="login-card">
     <div class="logos"><img id="loginLogoP" alt="Prefeitura"><img id="loginLogoT" alt="Turismo"></div>
-    <h1>Gestão do Turismo de Itatinga</h1>
+    <h1>Inventário Municipal de Turismo</h1>
     <p class="sub">Diretoria de Lazer, Turismo e Eventos</p>
     <div class="field"><label>Login</label><input id="email" type="text" placeholder="Seu login"></div>
     <div class="field"><label>Senha</label><input id="senha" type="password" placeholder="••••••••"></div>
@@ -217,7 +217,7 @@
   <header class="topbar">
     <button class="menu-btn" onclick="toggleSide()" aria-label="Menu">☰</button>
     <div class="logos"><img id="topLogoP" alt="Prefeitura"><img id="topLogoT" alt="Turismo">
-      <div class="brand"><div class="t1">Gestão do Turismo de Itatinga</div><div class="t2">Inventário Turístico Municipal</div></div>
+      <div class="brand"><div class="t1">Inventário Municipal de Turismo</div><div class="t2">Gestão do Turismo de Itatinga</div></div>
     </div>
     <div class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
@@ -1155,7 +1155,7 @@ function exportarPainel(){
   const sec=(title,inner)=>`<h2>${title}</h2>${inner||'<p style="font-size:12px;color:#777">Sem dados.</p>'}`;
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Painel — Gestao do Turismo de Itatinga</title>
   ${_printCSS(`.r{margin:8px 0}.rl{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:3px}.rl b{color:#1A3A6E;white-space:nowrap}.rl i{color:#888;font-weight:400;font-style:normal}.rb{background:#eef2f8;border-radius:6px;height:9px;overflow:hidden}.rb>div{height:100%;background:linear-gradient(90deg,#2563B0,#1A3A6E);border-radius:6px}`)}</head>
-  <body><main class="print-page"><header><img src="${LOGO_TUR}"><div><div class="t1">Painel do Turismo de Itatinga</div><div class="t2">Centro de Operações do Inventário Turístico Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_PREF}" style="margin-left:auto;max-width:76pt"></header>
+  <body><main class="print-page"><header><img src="${LOGO_TUR}"><div><div class="t1">Painel do Turismo de Itatinga</div><div class="t2">Centro de Operações do Inventário Municipal de Turismo · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_PREF}" style="margin-left:auto;max-width:76pt"></header>
   <div class="bar"><button onclick="window.print()">\U0001F5A8️ Imprimir / Salvar PDF</button></div>
   ${sec(`Distribuicao por modulo — ${totalAtivos} cadastros ativos (100%)`,barRows(byMod,totalAtivos))}
   ${sec(`Arquiteturas — ${arq.total} cadastradas (100%)`,barRows(arq.data,arq.total))}
@@ -1549,7 +1549,7 @@ function _docHTML(body,total,showPrintButton=true){
   const printButton=showPrintButton?`<div class="bar"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>`:"";
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório — Gestão do Turismo de Itatinga</title>
   ${_printCSS()}</head>
-  <body><main class="print-page"><table class="word-header"><tr><td class="brand-cell"><img class="logo-left" src="${LOGO_TUR}"></td><td><div class="t1">Relatório do Turismo de Itatinga</div><div class="t2">Inventário Turístico Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></td><td class="seal-cell"><img class="logo-right" src="${LOGO_PREF}"></td></tr><tr class="identity-strip"><td colspan="3"></td></tr></table>
+  <body><main class="print-page"><table class="word-header"><tr><td class="brand-cell"><img class="logo-left" src="${LOGO_TUR}"></td><td><div class="t1">Relatório do Turismo de Itatinga</div><div class="t2">Inventário Municipal de Turismo · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></td><td class="seal-cell"><img class="logo-right" src="${LOGO_PREF}"></td></tr><tr class="identity-strip"><td colspan="3"></td></tr></table>
   ${printButton}
   ${body}<div class="report-footer">Turismo Itatinga · Prefeitura Municipal de Itatinga/SP</div></main></body></html>`;
 }
@@ -1628,7 +1628,7 @@ function gerarListaResponsaveis(){
   ${_printCSS(`tr:nth-child(even) td{background:#f8fafc} h2{border-bottom:0;margin-bottom:10px}`)}</head>
   <body>
   <main class="print-page">
-  <header><img src="${LOGO_TUR}"><div><div class="t1">Lista de Responsáveis — Turismo de Itatinga</div><div class="t2">Inventário Turístico Municipal · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_PREF}" style="margin-left:auto;max-width:76pt"></header>
+  <header><img src="${LOGO_TUR}"><div><div class="t1">Lista de Responsáveis — Turismo de Itatinga</div><div class="t2">Inventário Municipal de Turismo · Emitido em ${new Date().toLocaleString("pt-BR")} · ${total} registro(s)</div></div><img src="${LOGO_PREF}" style="margin-left:auto;max-width:76pt"></header>
   <div class="bar"><button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button></div>
   <h2>👤 Contatos dos Responsáveis por Empreendimento</h2>
   <table><thead><tr><th>Módulo</th><th>Nome do Empreendimento</th><th>Responsável</th><th>Telefone / WhatsApp</th></tr></thead>
