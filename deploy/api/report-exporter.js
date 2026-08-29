@@ -354,11 +354,13 @@ async function buildReportDocx(payload, options = {}) {
   const { categories, total } = collectRows(payload);
   if (!total) return { buffer: await Packer.toBuffer(new Document({ sections: [{ children: [docxParagraph("Nenhum registro encontrado.")] }] })), filename: downloadName("docx", payload.mode) };
   await prepareRecordImages(categories, options);
+  const listRows = categories.flatMap((category) => category.records.map((record) => recordListRow(category, record)));
+  const showModuleColumn = categories.length > 1;
 
   const children = [
     docxParagraph("Prefeitura Municipal de Itatinga", { alignment: AlignmentType.CENTER, size: 28, bold: true }),
     docxParagraph("Gestão do Turismo de Itatinga", { alignment: AlignmentType.CENTER, size: 32, bold: true }),
-    docxParagraph("Inventário Turístico Municipal", { alignment: AlignmentType.CENTER, size: 28, bold: true }),
+    docxParagraph("Inventário Municipal de Turismo", { alignment: AlignmentType.CENTER, size: 28, bold: true }),
     docxParagraph(`Relatório ${payload.mode === "publico" ? "Público" : "Interno"}`, { alignment: AlignmentType.CENTER }),
     docxParagraph(`Emitido em ${formatDate()} · ${total} registro(s)`, { alignment: AlignmentType.CENTER }),
     docxParagraph("Resumo por categoria", { heading: HeadingLevel.HEADING_1, before: 360 }),
@@ -367,6 +369,30 @@ async function buildReportDocx(payload, options = {}) {
       rows: [
         new TableRow({ children: [tableCell("Categoria", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: 78 }), tableCell("Registros", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: 22 })] }),
         ...categories.map((category) => new TableRow({ children: [tableCell(category.label), tableCell(String(category.records.length))] }))
+      ]
+    }),
+    docxParagraph("Lista de cadastros", { heading: HeadingLevel.HEADING_1, before: 360 }),
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            ...(showModuleColumn ? [tableCell("Módulo", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: 20 })] : []),
+            tableCell("Cadastro", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: showModuleColumn ? 27 : 38 }),
+            tableCell("Responsável", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: showModuleColumn ? 25 : 32 }),
+            tableCell("Telefone", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: showModuleColumn ? 16 : 18 }),
+            tableCell("Status", { shading: COLORS.darkBlue, color: "FFFFFF", bold: true, width: 12 })
+          ]
+        }),
+        ...listRows.map((row) => new TableRow({
+          children: [
+            ...(showModuleColumn ? [tableCell(row.category)] : []),
+            tableCell(row.name),
+            tableCell(row.responsible || "—"),
+            tableCell(row.phone || "—"),
+            tableCell(row.status || "—")
+          ]
+        }))
       ]
     }),
     new Paragraph({ children: [new PageBreak()] })
@@ -408,7 +434,7 @@ async function buildReportDocx(payload, options = {}) {
 
   const doc = new Document({
     creator: "Gestão do Turismo de Itatinga",
-    title: "Relatório do Inventário Turístico Municipal",
+    title: "Relatório do Inventário Municipal de Turismo",
     description: "Relatório gerado pelo Sistema de Gestão do Turismo de Itatinga",
     styles: {
       default: { document: { run: { font: "Aptos", size: 21, color: COLORS.text } } },
@@ -457,6 +483,18 @@ async function buildReportXlsx(payload) {
   resumo.addRow({ item: "Categoria", valor: "Quantidade" });
   categories.forEach((category) => resumo.addRow({ item: category.label, valor: category.records.length }));
 
+  const lista = workbook.addWorksheet("Lista de cadastros");
+  lista.columns = [
+    { header: "Módulo", key: "categoria", width: 30 },
+    { header: "Cadastro", key: "name", width: 34 },
+    { header: "Responsável", key: "responsible", width: 34 },
+    { header: "Telefone", key: "phone", width: 22 },
+    { header: "Status", key: "status", width: 18 }
+  ];
+  categories.forEach((category) => {
+    category.records.forEach((record) => lista.addRow(recordListRow(category, record)));
+  });
+
   const sheet = workbook.addWorksheet("Registros");
   sheet.columns = [
     { header: "Categoria", key: "categoria", width: 30 },
@@ -475,7 +513,7 @@ async function buildReportXlsx(payload) {
     });
   });
 
-  for (const ws of [resumo, sheet]) {
+  for (const ws of [resumo, lista, sheet]) {
     ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
     ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${COLORS.darkBlue}` } };
     ws.eachRow((row) => row.eachCell((cell) => {
@@ -517,6 +555,7 @@ function pdfCellText(doc, value, x, y, width, options = {}) {
 function pdfSummaryList(doc, categories) {
   const rows = categories.flatMap((category) => category.records.map((record) => recordListRow(category, record)));
   if (!rows.length) return;
+  const showModuleColumn = categories.length > 1;
 
   doc.moveDown(1.2);
   pdfText(doc, "Lista de cadastros", { size: 15, bold: true, color: `#${COLORS.darkBlue}` });
@@ -524,11 +563,16 @@ function pdfSummaryList(doc, categories) {
 
   const left = doc.page.margins.left;
   const usable = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-  const cols = [
+  const cols = showModuleColumn ? [
+    { label: "Módulo", key: "category", width: Math.round(usable * 0.20) },
+    { label: "Cadastro", key: "name", width: Math.round(usable * 0.31) },
+    { label: "Responsável", key: "responsible", width: Math.round(usable * 0.30) },
+    { label: "Telefone", key: "phone", width: Math.round(usable * 0.19) }
+  ] : [
     { label: "Cadastro", key: "name", width: Math.round(usable * 0.34) },
     { label: "Responsável", key: "responsible", width: Math.round(usable * 0.27) },
     { label: "Telefone", key: "phone", width: Math.round(usable * 0.20) },
-    { label: "Situação", key: "status", width: Math.round(usable * 0.14) }
+    { label: "Status", key: "status", width: Math.round(usable * 0.14) }
   ];
   cols[cols.length - 1].width = usable - cols.slice(0, -1).reduce((sum, col) => sum + col.width, 0);
 
@@ -585,13 +629,13 @@ async function buildReportPdf(payload, options = {}) {
     size: "A4",
     margins: { top: 42.5, right: 42.5, bottom: 42.5, left: 42.5 },
     bufferPages: true,
-    info: { Title: "Relatório do Inventário Turístico Municipal", Author: "Gestão do Turismo de Itatinga" }
+    info: { Title: "Relatório do Inventário Municipal de Turismo", Author: "Gestão do Turismo de Itatinga" }
   });
 
   pdfText(doc, "Prefeitura Municipal de Itatinga", { size: 12, color: `#${COLORS.muted}`, align: "center" });
   doc.moveDown(0.4);
   pdfText(doc, "Gestão do Turismo de Itatinga", { size: 22, bold: true, color: `#${COLORS.darkBlue}`, align: "center" });
-  pdfText(doc, "Inventário Turístico Municipal", { size: 16, bold: true, color: `#${COLORS.blue}`, align: "center" });
+  pdfText(doc, "Inventário Municipal de Turismo", { size: 16, bold: true, color: `#${COLORS.blue}`, align: "center" });
   doc.moveDown(0.5);
   pdfText(doc, `Relatório ${payload.mode === "publico" ? "Público" : "Interno"} · Emitido em ${formatDate()}`, { size: 10.5, color: `#${COLORS.muted}`, align: "center" });
   pdfText(doc, `${total} registro(s)`, { size: 10.5, color: `#${COLORS.muted}`, align: "center" });
@@ -645,7 +689,7 @@ async function buildReportPdf(payload, options = {}) {
   for (let i = 0; i < range.count; i++) {
     doc.switchToPage(i);
     if (i > 0) {
-      doc.font("Helvetica").fontSize(8).fillColor(`#${COLORS.muted}`).text("Gestão do Turismo de Itatinga · Inventário Turístico Municipal", doc.page.margins.left, 18, { align: "right", width: doc.page.width - doc.page.margins.left - doc.page.margins.right });
+      doc.font("Helvetica").fontSize(8).fillColor(`#${COLORS.muted}`).text("Gestão do Turismo de Itatinga · Inventário Municipal de Turismo", doc.page.margins.left, 18, { align: "right", width: doc.page.width - doc.page.margins.left - doc.page.margins.right });
       doc.font("Helvetica").fontSize(8).fillColor(`#${COLORS.muted}`).text(`Emitido em ${formatDate()} · Página ${i + 1} de ${range.count} · inventario.turismoitatinga.com.br`, doc.page.margins.left, doc.page.height - doc.page.margins.bottom - 18, { align: "center", width: doc.page.width - doc.page.margins.left - doc.page.margins.right, lineBreak: false });
     }
   }
