@@ -1617,9 +1617,9 @@ function _selExport(){const items=[];
   MODULES.forEach(m=>{const c=document.getElementById("chk_"+m.key);if(!c||c.checked)items.push(_itemDeModulo(m));});
   return items;}
 function _filtrosExport(){const q=document.getElementById("expq"),st=document.getElementById("expst");return {q:q?q.value:"",st:st?st.value:""};}
-function gerarRelatorio(){exportarPDF(_selExport(),_filtrosExport());}
-function gerarRelatorioWord(){exportarWord(_selExport(),_filtrosExport());}
-function gerarRelatorioExcel(){exportarExcel(_selExport(),_filtrosExport());}
+async function gerarRelatorio(){await loadData();exportarPDF(_selExport(),_filtrosExport());}
+async function gerarRelatorioWord(){await loadData();exportarWord(_selExport(),_filtrosExport());}
+async function gerarRelatorioExcel(){await loadData();exportarExcel(_selExport(),_filtrosExport());}
 function gerarListaResponsaveis(){
   const filtros=_filtrosExport();
   const q=(filtros.q||"").toLowerCase(),st=filtros.st||"";
@@ -1656,7 +1656,8 @@ function gerarListaResponsaveis(){
   const w=window.open("","_blank");if(!w)return toast("Permita pop-ups para abrir.");
   w.document.open();w.document.write(html2);w.document.close();
 }
-function gerarRelatorioModulo(key,fmt){const m=MODMAP[key];if(!m)return toast("Módulo não encontrado");
+async function gerarRelatorioModulo(key,fmt){const m=MODMAP[key];if(!m)return toast("Módulo não encontrado");
+  await loadData();
   const f=filterState[key]||{};const filtros={q:f.q||"",st:f.st||"",cat:f.cat||""};
   (fmt==="word"?exportarWord:fmt==="xlsx"?exportarExcel:exportarPDF)([_itemDeModulo(m)],filtros);}
 async function renderUsers(){

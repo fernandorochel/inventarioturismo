@@ -188,6 +188,24 @@ function collectPhotos(record) {
   return photos.filter((photo, index, all) => all.findIndex((p) => p.src === photo.src) === index);
 }
 
+function firstValue(record, keys) {
+  for (const key of keys) {
+    if (!empty(record?.[key])) return text(record[key]);
+  }
+  return "";
+}
+
+function recordListRow(category, record) {
+  const raw = record.raw || {};
+  return {
+    category: stripEmoji(category.label),
+    name: text(record.title || raw.nome || "Registro"),
+    responsible: firstValue(raw, ["responsavel", "artesao_nome", "proprietario", "instituicao", "empresa"]),
+    phone: firstValue(raw, ["telefone", "resp_telefone", "artesao_telefone", "whatsapp", "celular"]),
+    status: firstValue(raw, ["status"])
+  };
+}
+
 function linkKind(value) {
   const s = text(value);
   if (/^https?:\/\//i.test(s)) return s;
@@ -489,6 +507,66 @@ function pdfField(doc, label, value) {
   doc.font("Helvetica").fillColor(link ? `#${COLORS.blue}` : `#${COLORS.text}`).fontSize(9.5).text(s, { link: link || undefined, underline: Boolean(link) });
 }
 
+function pdfCellText(doc, value, x, y, width, options = {}) {
+  doc.font(options.bold ? "Helvetica-Bold" : "Helvetica")
+    .fillColor(options.color || `#${COLORS.text}`)
+    .fontSize(options.size || 8.4)
+    .text(text(value) || "—", x, y, { width, lineGap: 1 });
+}
+
+function pdfSummaryList(doc, categories) {
+  const rows = categories.flatMap((category) => category.records.map((record) => recordListRow(category, record)));
+  if (!rows.length) return;
+
+  doc.moveDown(1.2);
+  pdfText(doc, "Lista de cadastros", { size: 15, bold: true, color: `#${COLORS.darkBlue}` });
+  doc.moveDown(0.4);
+
+  const left = doc.page.margins.left;
+  const usable = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const cols = [
+    { label: "Cadastro", key: "name", width: Math.round(usable * 0.34) },
+    { label: "Responsável", key: "responsible", width: Math.round(usable * 0.27) },
+    { label: "Telefone", key: "phone", width: Math.round(usable * 0.20) },
+    { label: "Situação", key: "status", width: Math.round(usable * 0.14) }
+  ];
+  cols[cols.length - 1].width = usable - cols.slice(0, -1).reduce((sum, col) => sum + col.width, 0);
+
+  const drawHeader = () => {
+    ensurePdfSpace(doc, 34);
+    let x = left;
+    const y = doc.y;
+    doc.rect(left, y, usable, 20).fill(`#${COLORS.darkBlue}`);
+    cols.forEach((col) => {
+      pdfCellText(doc, col.label, x + 4, y + 5, col.width - 8, { bold: true, color: "#FFFFFF", size: 8.2 });
+      x += col.width;
+    });
+    doc.y = y + 22;
+  };
+
+  drawHeader();
+  rows.forEach((row, index) => {
+    const values = cols.map((col) => row[col.key] || "—");
+    doc.font("Helvetica").fontSize(8.4);
+    const heights = values.map((value, i) => doc.heightOfString(text(value) || "—", { width: cols[i].width - 8, lineGap: 1 }));
+    const rowHeight = Math.max(22, ...heights.map((h) => h + 10));
+    if (doc.y + rowHeight > doc.page.height - doc.page.margins.bottom - 45) {
+      doc.addPage();
+      drawHeader();
+    }
+    const y = doc.y;
+    doc.rect(left, y, usable, rowHeight).fill(index % 2 ? "#FFFFFF" : `#${COLORS.light}`);
+    doc.strokeColor(`#${COLORS.border}`).lineWidth(0.5).rect(left, y, usable, rowHeight).stroke();
+    let x = left;
+    cols.forEach((col, i) => {
+      pdfCellText(doc, values[i], x + 4, y + 5, col.width - 8, { bold: i === 0, size: 8.4 });
+      if (i > 0) doc.moveTo(x, y).lineTo(x, y + rowHeight).strokeColor(`#${COLORS.border}`).stroke();
+      x += col.width;
+    });
+    doc.y = y + rowHeight;
+  });
+}
+
 function pdfBuffer(doc) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -522,10 +600,11 @@ async function buildReportPdf(payload, options = {}) {
   doc.moveDown(0.4);
   if (!total) pdfText(doc, "Nenhum registro encontrado.", { size: 11, color: `#${COLORS.muted}` });
   categories.forEach((category) => pdfText(doc, `${category.label}: ${category.records.length}`, { size: 10.5 }));
+  pdfSummaryList(doc, categories);
 
   for (const category of categories) {
     doc.addPage();
-    pdfText(doc, `${category.icon ? category.icon + " " : ""}${category.label} (${category.records.length})`, { size: 15, bold: true, color: `#${COLORS.darkBlue}` });
+    pdfText(doc, `${category.label} (${category.records.length})`, { size: 15, bold: true, color: `#${COLORS.darkBlue}` });
     doc.moveDown(0.4);
     for (const record of category.records) {
       ensurePdfSpace(doc, 80);
