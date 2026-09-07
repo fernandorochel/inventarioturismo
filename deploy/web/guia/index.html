@@ -38,7 +38,7 @@ header.site{background:#fff;border-bottom:1px solid var(--cinza-borda);position:
 /* Hero */
 .hero{position:relative;background:linear-gradient(135deg,var(--azul-escuro),var(--azul-principal));color:#fff;padding:46px 0 58px;overflow:hidden}
 .hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,var(--verde-natureza) 0 25%,var(--verde-claro) 25% 50%,var(--laranja) 50% 75%,var(--amarelo) 75%)}
-.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.5px;position:relative}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:0;position:relative}
 .hero p{font-size:clamp(1rem,2vw,1.2rem);max-width:640px;margin:12px 0 0;color:rgba(255,255,255,.92);position:relative}
 .hero .badge{display:inline-block;background:var(--amarelo);color:var(--azul-escuro);font-weight:800;font-size:12.5px;letter-spacing:.4px;border-radius:var(--radius-chip);padding:6px 14px;margin-bottom:14px;position:relative;font-family:'Montserrat'}
 
@@ -54,6 +54,15 @@ section.block{padding:34px 0 10px}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:6px;flex-wrap:wrap}
 .sec-head h2{font-size:clamp(1.4rem,3vw,1.9rem);color:var(--azul-escuro);font-weight:800}
 .sec-head .muted{font-size:13.5px}
+.quick-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 24px}
+.quick-chip{min-height:72px;border:1px solid var(--cinza-borda);border-radius:var(--radius-card);background:#fff;color:var(--azul-escuro);font:700 14px/1.25 'Montserrat',sans-serif;padding:12px 14px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.quick-chip:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(11,61,120,.09)}
+.quick-chip.active{border-color:var(--azul-principal);background:var(--azul-pastel);box-shadow:inset 0 0 0 1px var(--azul-principal)}
+.quick-chip:focus-visible,.filter-btn:focus-visible,.action-btn:focus-visible,.load-more:focus-visible{outline:3px solid var(--azul-claro);outline-offset:2px}
+.quick-icon{font-size:25px;line-height:1;flex:none}
+.quick-copy{display:flex;flex-direction:column;gap:2px}
+.quick-copy small{font-size:11.5px;color:var(--texto-sec);font-weight:600}
+.all-categories{min-height:40px;border:0;background:transparent;color:var(--azul-principal);font:700 13px 'Montserrat',sans-serif;cursor:pointer;padding:6px 0}
 
 /* Icon grid */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;margin-top:18px}
@@ -74,8 +83,14 @@ section.block{padding:34px 0 10px}
 .detail-head{display:flex;align-items:center;gap:16px;margin-bottom:6px}
 .detail-head .badge-ic{width:60px;height:60px;font-size:28px}
 .detail-head h2{font-size:clamp(1.4rem,3vw,2rem);color:var(--azul-escuro);font-weight:800}
+.detail-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 4px;flex-wrap:wrap}
+.subsearch{min-width:260px;flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--cinza-borda);border-radius:var(--radius-btn);padding:0 12px}
+.subsearch input{width:100%;min-height:44px;border:0;outline:0;background:transparent;color:var(--texto);font:500 14px 'Montserrat',sans-serif}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{min-height:44px;border:1px solid var(--cinza-borda);border-radius:999px;background:#fff;color:var(--texto-sec);font:700 12.5px 'Montserrat',sans-serif;padding:8px 14px;cursor:pointer}
+.filter-btn.active{background:var(--azul-escuro);border-color:var(--azul-escuro);color:#fff}
 .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-top:20px}
-.item{background:#fff;border:1px solid var(--cinza-borda);border-radius:var(--radius-card);padding:18px 18px 16px;box-shadow:0 4px 14px rgba(11,61,120,.05)}
+.item{background:#fff;border:1px solid var(--cinza-borda);border-radius:var(--radius-card);padding:18px 18px 16px;box-shadow:0 4px 14px rgba(11,61,120,.05);overflow:hidden}
 .item h3{font-size:16.5px;color:var(--azul-escuro);font-weight:700;margin-bottom:8px;font-family:'Poppins';line-height:1.25}
 .tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:var(--radius-chip);padding:3px 11px;margin-bottom:10px;color:#fff}
 .row{display:flex;gap:8px;font-size:13.5px;color:var(--texto-sec);margin:5px 0;align-items:flex-start}
@@ -92,6 +107,39 @@ section.block{padding:34px 0 10px}
 .desc{font-size:13px;color:var(--texto-sec);margin-top:10px;border-top:1px dashed var(--cinza-borda);padding-top:10px}
 .empty{background:#fff;border:1px dashed var(--cinza-borda);border-radius:var(--radius-card);padding:40px 22px;text-align:center;color:var(--texto-sec)}
 .empty b{color:var(--azul-escuro)}
+.place-card{display:flex;flex-direction:column;min-height:100%}
+.place-card .thumb{margin:-18px -18px 14px;border:0;border-bottom:1px solid var(--cinza-borda);border-radius:0}
+.place-card h3{font-size:18px;margin:0 0 5px}
+.place-meta{font-size:13px;color:var(--texto-sec);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px}
+.place-card .tag{align-self:flex-start;margin:0 0 9px}
+.card-actions{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:auto;padding-top:16px}
+.action-btn{min-height:44px;border:1px solid var(--cinza-borda);border-radius:var(--radius-btn);background:#fff;color:var(--azul-escuro);font:700 12.5px 'Montserrat',sans-serif;padding:9px 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;text-decoration:none}
+.action-btn.primary{background:var(--azul-principal);border-color:var(--azul-principal);color:#fff}
+.action-btn.whatsapp{background:#167D3D;border-color:#167D3D;color:#fff}
+.action-btn:hover{filter:brightness(.96)}
+.load-wrap{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0 8px}
+.load-more{min-height:46px;border:1px solid var(--azul-principal);border-radius:var(--radius-btn);background:#fff;color:var(--azul-principal);font:700 14px 'Montserrat',sans-serif;padding:10px 22px;cursor:pointer}
+.results-note{font-size:12.5px;color:var(--texto-sec);width:100%}
+
+/* Página individual */
+.profile{display:none}
+.profile.show{display:block}
+.profile-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.profile-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:28px;align-items:start}
+.profile-media .thumb{margin:0;aspect-ratio:16/10;border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.profile-media .thumb img{background:#fff}
+.profile-main{min-width:0}
+.profile-main h1{font-size:clamp(1.7rem,4vw,2.55rem);color:var(--azul-escuro);line-height:1.15;margin:8px 0 12px;letter-spacing:0}
+.profile-actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 20px}
+.profile-actions .action-btn{font-size:13px;padding:10px 15px}
+.profile-info{border-top:1px solid var(--cinza-borda);padding-top:14px}
+.profile-info .row{font-size:14px;margin:9px 0}
+.profile-copy{margin-top:26px;padding-top:22px;border-top:1px solid var(--cinza-borda)}
+.profile-copy h2{font-size:19px;color:var(--azul-escuro);margin-bottom:8px}
+.profile-copy p{color:var(--texto-sec);margin:0 0 14px;white-space:pre-line}
+.official-note{margin-top:24px;background:var(--azul-pastel);border-left:4px solid var(--azul-principal);border-radius:var(--radius-btn);padding:13px 15px;color:var(--azul-escuro);font-size:12.5px;font-weight:600}
+.toast{position:fixed;left:50%;bottom:24px;z-index:80;transform:translate(-50%,20px);background:var(--azul-escuro);color:#fff;border-radius:var(--radius-btn);padding:11px 16px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:var(--shadow-card)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 
 /* Footer institucional */
 footer.site{background:linear-gradient(112deg,#1565C0 0%,#0B3D78 100%);color:#fff;margin-top:48px;padding:68px 0 74px}
@@ -130,6 +178,21 @@ footer.site{background:linear-gradient(112deg,#1565C0 0%,#0B3D78 100%);color:#ff
   .foot-contact-label{font-size:13px}
   .foot-contact-value{font-size:17px}
   .foot-wa{width:100%;justify-content:center;padding:17px 20px;font-size:16px}
+  .quick-nav{grid-template-columns:1fr 1fr;gap:8px}
+  .quick-chip{min-height:68px;padding:10px;font-size:12.5px}
+  .quick-icon{font-size:22px}
+  .cards{grid-template-columns:1fr 1fr;gap:10px}
+  .cat-card{padding:16px 9px 14px}
+  .cat-card h3{font-size:13px}
+  .list{grid-template-columns:1fr}
+  .detail-tools{align-items:stretch}
+  .subsearch{min-width:100%}
+  .filters{width:100%;overflow:auto;flex-wrap:nowrap;padding-bottom:3px}
+  .filter-btn{white-space:nowrap}
+  .card-actions{grid-template-columns:1fr auto auto}
+  .profile-layout{grid-template-columns:1fr;gap:20px}
+  .profile-main h1{font-size:1.75rem}
+  .profile-actions .action-btn{flex:1 1 calc(50% - 8px)}
 }
 
 .fab-sys{position:fixed;right:14px;bottom:14px;z-index:50;display:inline-flex;align-items:center;gap:6px;background:rgba(6,47,95,.82);color:#fff;font-size:12px;font-weight:600;padding:8px 13px;border-radius:999px;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:.55;transition:opacity .15s}
@@ -137,6 +200,10 @@ footer.site{background:linear-gradient(112deg,#1565C0 0%,#0B3D78 100%);color:#ff
 .thumb{margin:2px 0 10px;aspect-ratio:16/9;border-radius:12px;border:1px solid var(--cinza-borda);background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .thumb.portrait,.thumb.square{aspect-ratio:16/9}
 .thumb img{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
+.thumb.photo-media img{object-fit:cover}
+.thumb.logo-media img{object-fit:contain;padding:14px}
+.thumb.no-media{background:linear-gradient(135deg,var(--azul-pastel),#fff);color:var(--azul-principal);font-size:42px}
+.profile-placeholder{min-height:320px}
 .file-link{display:inline-flex;align-items:center;gap:8px;margin:2px 0 10px;color:var(--azul-principal);font-weight:700;font-size:13px;border:1px solid var(--cinza-borda);border-radius:10px;padding:9px 12px;background:#fff}
 .aviso-cat{grid-column:1/-1;background:#FFF7E6;border:1px solid #F6D58A;border-left:4px solid var(--laranja);border-radius:14px;padding:12px 16px;font-size:13px;color:#7a5800;line-height:1.45}
 .aviso-cat b{color:#9a4a00}
@@ -178,8 +245,13 @@ footer.site{background:linear-gradient(112deg,#1565C0 0%,#0B3D78 100%);color:#ff
 <main class="wrap">
   <section class="block grid-view" id="gridView">
     <div class="sec-head">
-      <h2>Explore por categoria</h2>
+      <h2>O que você procura?</h2>
       <span class="muted" id="catCount"></span>
+    </div>
+    <div class="quick-nav" id="quickNav" aria-label="Atalhos do guia"></div>
+    <div class="sec-head">
+      <h2 id="categoryHeading">Todas as categorias</h2>
+      <button class="all-categories" id="allCategories" type="button" onclick="setGroup('todos')" hidden>Ver todas as categorias</button>
     </div>
     <div class="cards" id="cards"></div>
     <div id="gridEmpty"></div>
@@ -191,7 +263,25 @@ footer.site{background:linear-gradient(112deg,#1565C0 0%,#0B3D78 100%);color:#ff
       <div class="badge-ic" id="dBadge"></div>
       <div><h2 id="dTitle"></h2><span class="muted" id="dCount"></span></div>
     </div>
+    <div class="detail-tools" id="detailTools">
+      <label class="subsearch"><span aria-hidden="true">🔎</span><input id="detailSearch" type="search" placeholder="Buscar nesta categoria..." aria-label="Buscar nesta categoria"></label>
+      <div class="filters" aria-label="Filtros da categoria">
+        <button class="filter-btn active" type="button" data-filter="todos" onclick="setDetailFilter('todos')">Todos</button>
+        <button class="filter-btn" type="button" data-filter="foto" onclick="setDetailFilter('foto')">Com foto</button>
+        <button class="filter-btn" type="button" data-filter="whatsapp" onclick="setDetailFilter('whatsapp')">Com WhatsApp</button>
+        <button class="filter-btn" type="button" data-filter="acessivel" onclick="setDetailFilter('acessivel')">Com acessibilidade</button>
+      </div>
+      <div class="results-note" id="resultsNote"></div>
+    </div>
     <div class="list" id="dList"></div>
+  </section>
+
+  <section class="block profile" id="profileView" aria-live="polite">
+    <div class="profile-top">
+      <button class="back" type="button" onclick="closePlace()">← Voltar à categoria</button>
+      <button class="action-btn" type="button" onclick="shareCurrentPlace()">↗ Compartilhar</button>
+    </div>
+    <div id="profileContent"></div>
   </section>
 </main>
 
@@ -212,6 +302,8 @@ footer.site{background:linear-gradient(112deg,#1565C0 0%,#0B3D78 100%);color:#ff
   </div>
 </footer>
 
+<div class="toast" id="toast" role="status"></div>
+
 <script>
 const STORE_KEY="gti_preview_data_v4";
 const MODCAT=[{"key": "hospedagem", "label": "Meios de Hospedagem", "icon": "🛏️", "grupo": "C – Serviços e Equipamentos"}, {"key": "restaurantes", "label": "Restaurantes, Pastelarias, Pizzarias e Lanchonetes", "icon": "🍽️", "grupo": "C – Serviços e Equipamentos"}, {"key": "bares", "label": "Bares", "icon": "🍻", "grupo": "C – Serviços e Equipamentos"}, {"key": "estruturas_eventos", "label": "Estruturas para Eventos", "icon": "🏟️", "grupo": "C – Serviços e Equipamentos"}, {"key": "empresas_eventos", "label": "Organizadoras de Eventos", "icon": "🎪", "grupo": "C – Serviços e Equipamentos"}, {"key": "parques_naturais", "label": "Parques Naturais", "icon": "🌳", "grupo": "D – Atrativos Turísticos"}, {"key": "outros_naturais", "label": "Outros Atrativos Naturais", "icon": "🏞️", "grupo": "D – Atrativos Turísticos"}, {"key": "conjunto_arq", "label": "Conjunto Arquitetônico", "icon": "🏘️", "grupo": "D – Atrativos Turísticos"}, {"key": "lugares_fe", "label": "Lugares de Manifestações de Fé", "icon": "🙏", "grupo": "D – Atrativos Turísticos"}, {"key": "feiras_mercados", "label": "Feiras/Mercados Culturais", "icon": "🛒", "grupo": "D – Atrativos Turísticos"}, {"key": "arq_civil", "label": "Arquitetura Civil", "icon": "🏛️", "grupo": "D – Atrativos Turísticos"}, {"key": "arq_oficial", "label": "Arquitetura Oficial", "icon": "🏤", "grupo": "D – Atrativos Turísticos"}, {"key": "arq_religiosa", "label": "Arquitetura Religiosa", "icon": "⛪", "grupo": "D – Atrativos Turísticos"}, {"key": "arq_industrial", "label": "Arquitetura Industrial/Agrícola", "icon": "🏭", "grupo": "D – Atrativos Turísticos"}, {"key": "arq_funeraria", "label": "Arquitetura Funerária", "icon": "⚰️", "grupo": "D – Atrativos Turísticos"}, {"key": "marcos_historicos", "label": "Marcos Históricos", "icon": "🗿", "grupo": "D – Atrativos Turísticos"}, {"key": "obras_infra", "label": "Obras de Infraestrutura", "icon": "🌉", "grupo": "D – Atrativos Turísticos"}, {"key": "lugares_memoria", "label": "Lugares de Memória", "icon": "🕯️", "grupo": "D – Atrativos Turísticos"}, {"key": "lugares_cultura", "label": "Lugares de Cultura", "icon": "🎭", "grupo": "D – Atrativos Turísticos"}, {"key": "eventos", "label": "Eventos", "icon": "📅", "grupo": "D – Atrativos Turísticos"}, {"key": "artesanato", "label": "Artesanato/Trabalhos Manuais", "icon": "🧶", "grupo": "D – Atrativos Turísticos"}, {"key": "confeitaria_artesanal", "label": "Confeitaria Artesanal", "icon": "🧁", "grupo": "C – Serviços e Equipamentos"}, {"key": "empresas_brinquedos", "label": "Empresas de Brinquedos", "icon": "🎈", "grupo": "C – Serviços e Equipamentos"}, {"key": "cantores_locais", "label": "Cantores Locais", "icon": "🎤", "grupo": "D – Atrativos Turísticos"}, {"key": "apicultores", "label": "Apicultores", "icon": "🐝", "grupo": "C – Serviços e Equipamentos"}, {"key": "agencias", "label": "Agências de Viagens e Receptivo", "icon": "🧳", "grupo": "C – Serviços e Equipamentos"}, {"key": "turismo_rural", "label": "Turismo Rural", "icon": "🚜", "grupo": "E – Segmentação"}, {"key": "gastronomia_rural", "label": "Gastronomia Rural", "icon": "🧀", "grupo": "C – Serviços e Equipamentos"}, {"key": "transp_fretamento", "label": "Empresas de Fretamento", "icon": "🚌", "grupo": "C – Serviços e Equipamentos"}, {"key": "gastronomico_seg", "label": "Turismo Gastronômico", "icon": "🍷", "grupo": "E – Segmentação"}, {"key": "info_turisticas", "label": "Pontos de Informações Turísticas", "icon": "ℹ️", "grupo": "C – Serviços e Equipamentos"}, {"key": "postos_gasolina", "label": "Postos de Gasolina", "icon": "⛽", "grupo": "C – Serviços e Equipamentos"}, {"key": "transp_interno", "label": "Transportes - Interno", "icon": "🚐", "grupo": "C – Serviços e Equipamentos"}, {"key": "turismo_industrial", "label": "Turismo Comercial", "icon": "🏭", "grupo": "E – Segmentação"}, {"key": "recreacao", "label": "Recreação e Entretenimento", "icon": "🎟️", "grupo": "C – Serviços e Equipamentos"}, {"key": "academias", "label": "Academias de Ginástica", "icon": "🏋️", "grupo": "C – Serviços e Equipamentos"}, {"key": "saude", "label": "Saúde", "icon": "🏥", "grupo": "C – Serviços e Equipamentos"}, {"key": "atendimento_pet", "label": "Atendimento Pet", "icon": "🐾", "grupo": "C – Serviços e Equipamentos"}, {"key": "associacoes", "label": "Associações", "icon": "🤝", "grupo": "C – Serviços e Equipamentos"}, {"key": "servicos_publicos", "label": "Serviços Público", "icon": "🏛️", "grupo": "C – Serviços e Equipamentos"}, {"key": "farmacias", "label": "Farmácia", "icon": "💊", "grupo": "C – Serviços e Equipamentos"}, {"key": "dentistas", "label": "Dentistas", "icon": "🦷", "grupo": "C – Serviços e Equipamentos"}, {"key": "transp_externo", "label": "Transportes - Externo", "icon": "🚍", "grupo": "C – Serviços e Equipamentos"}, {"key": "nautico_pesca", "label": "Turismo Náutico/Pesca", "icon": "⛵", "grupo": "E – Segmentação"}, {"key": "rancho_sitio", "label": "Rancho/Sítio de Aluguel", "icon": "🏡", "grupo": "C – Serviços e Equipamentos"}, {"key": "demanda_turistica", "label": "Demanda Turística", "icon": "📈", "grupo": "E – Segmentação"}, {"key": "atas_comtur", "label": "ATAs de Reuniões — COMTUR", "icon": "🏛️", "grupo": "E – Segmentação"}, {"key": "cursos_capacitacao", "label": "Cursos e Capacitações", "icon": "🎓", "grupo": "E – Segmentação"}, {"key": "agencias_bancarias", "label": "Agências Bancárias", "icon": "🏦", "grupo": "C – Serviços e Equipamentos"}, {"key": "saloes_beleza", "label": "Salões de Beleza/Cabeleireiro", "icon": "💈", "grupo": "C – Serviços e Equipamentos"}, {"key": "borracheiros_mecanicos", "label": "Borracheiros/Mecânicos", "icon": "🔧", "grupo": "C – Serviços e Equipamentos"}, {"key": "sinalizacao_tur", "label": "Sinalização Turística", "icon": "🪧", "grupo": "C – Serviços e Equipamentos"}, {"key": "horarios_onibus", "label": "Horários de Ônibus", "icon": "🚌", "grupo": "C – Serviços e Equipamentos"}];
@@ -227,20 +319,65 @@ function visiveis(key){return recs(key).filter(r=>(!r.status||r.status!=="Inativ
 
 let CATS=[];
 const EXCLUIR_GUIA=["cantores_locais","empresas_brinquedos","transp_interno"];
+const GUIDE_GROUPS=[
+  {key:"todos",label:"Ver tudo",icon:"⌕",description:"Todas as categorias",keys:[]},
+  {key:"comer",label:"Onde comer",icon:"🍽️",description:"Sabores e produtos locais",keys:["restaurantes","bares","confeitaria_artesanal","gastronomia_rural","gastronomico_seg","apicultores"]},
+  {key:"ficar",label:"Onde ficar",icon:"🛏️",description:"Hospedagens e propriedades",keys:["hospedagem","rancho_sitio"]},
+  {key:"fazer",label:"O que fazer",icon:"🧭",description:"Atrativos, cultura e lazer",keys:["parques_naturais","outros_naturais","conjunto_arq","lugares_fe","feiras_mercados","arq_civil","arq_oficial","arq_religiosa","arq_industrial","arq_funeraria","marcos_historicos","obras_infra","lugares_memoria","lugares_cultura","eventos","artesanato","turismo_rural","nautico_pesca","recreacao","turismo_industrial"]},
+  {key:"servicos",label:"Serviços ao visitante",icon:"ℹ️",description:"Informação e apoio à viagem",keys:[]}
+];
+let activeGroup="todos";
+let activeCategory="";
+let activePlaceToken="";
+let detailFilter="todos";
+let detailQuery="";
+let detailLimit=12;
 function buildCats(){
   CATS=MODCAT.map((m,idx)=>({...m,color:colorFor(idx),n:visiveis(m.key).length})).filter(c=>c.n>0&&!EXCLUIR_GUIA.includes(c.key));
 }
+function normalizeSearch(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}
+function groupCategories(groupKey){
+  if(groupKey==="todos")return CATS;
+  const group=GUIDE_GROUPS.find(g=>g.key===groupKey);
+  if(!group)return CATS;
+  if(groupKey==="servicos"){
+    const reserved=new Set(GUIDE_GROUPS.filter(g=>!["todos","servicos"].includes(g.key)).flatMap(g=>g.keys));
+    return CATS.filter(c=>!reserved.has(c.key));
+  }
+  return CATS.filter(c=>group.keys.includes(c.key));
+}
+function renderQuickNav(){
+  const nav=document.getElementById("quickNav");
+  nav.innerHTML=GUIDE_GROUPS.filter(g=>g.key!=="todos").map(g=>{
+    const cats=groupCategories(g.key);
+    const places=cats.reduce((sum,c)=>sum+c.n,0);
+    return `<button class="quick-chip${activeGroup===g.key?" active":""}" type="button" onclick="setGroup('${g.key}')" aria-pressed="${activeGroup===g.key}">
+      <span class="quick-icon" aria-hidden="true">${g.icon}</span>
+      <span class="quick-copy"><span>${g.label}</span><small>${places} ${places===1?"local":"locais"}</small></span>
+    </button>`;
+  }).join("");
+}
+function setGroup(key){
+  activeGroup=GUIDE_GROUPS.some(g=>g.key===key)?key:"todos";
+  renderGrid(document.getElementById("q").value);
+  document.getElementById("categoryHeading").scrollIntoView({behavior:"smooth",block:"start"});
+}
 function renderGrid(filter){
   buildCats();
-  const f=(filter||"").trim().toLowerCase();
-  const list=f?CATS.filter(c=>c.label.toLowerCase().includes(f)||visiveis(c.key).some(r=>((r.nome||r.artesao_nome||"")+" "+(r.categoria||"")).toLowerCase().includes(f))):CATS;
+  const f=normalizeSearch(filter).trim();
+  const grouped=groupCategories(activeGroup);
+  const list=f?grouped.filter(c=>normalizeSearch(c.label).includes(f)||visiveis(c.key).some(r=>normalizeSearch((r.nome||r.artesao_nome||"")+" "+(r.categoria||"")+" "+(r.endereco||"")).includes(f))):grouped;
   const cont=document.getElementById("cards");
   const totalLocais=CATS.reduce((s,c)=>s+c.n,0);
   document.getElementById("catCount").textContent=CATS.length+" categorias · "+totalLocais+" locais cadastrados";
-  document.getElementById("syncNote").innerHTML='✅ Vinculado ao inventário: aparecem aqui apenas os cadastros com <b>autorização de publicação no Guia</b> (campo no sistema). Cadastros marcados como “Não” ficam ocultos.';
+  const group=GUIDE_GROUPS.find(g=>g.key===activeGroup)||GUIDE_GROUPS[0];
+  document.getElementById("categoryHeading").textContent=group.key==="todos"?"Todas as categorias":group.label;
+  document.getElementById("allCategories").hidden=group.key==="todos";
+  document.getElementById("syncNote").innerHTML='<b>Conteúdo oficial</b> atualizado pela Diretoria Municipal de Turismo de Itatinga.';
+  renderQuickNav();
   if(!CATS.length){
     cont.innerHTML="";
-    document.getElementById("gridEmpty").innerHTML='<div class="empty">Nenhum cadastro encontrado neste navegador.<br><b>Abra o Sistema de Gestão</b> e lance os cadastros — eles aparecerão aqui automaticamente.<br><br><a class="btn btn-primary" href="/">Abrir Sistema de Gestão</a></div>';
+    document.getElementById("gridEmpty").innerHTML='<div class="empty"><b>Conteúdo temporariamente indisponível.</b><br>Tente novamente em alguns instantes.</div>';
     return;
   }
   document.getElementById("gridEmpty").innerHTML="";
@@ -248,7 +385,7 @@ function renderGrid(filter){
   cont.innerHTML=list.map(c=>`
     <div class="cat-card" tabindex="0" role="button" onclick="openCat('${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCat('${c.key}')}">
       <div class="badge-ic" style="background:${c.color}1a;color:${c.color}">${c.icon||"📍"}</div>
-      <h3>${c.label}</h3>
+      <h3>${esc(c.label)}</h3>
       <div class="count"><b>${c.n}</b> ${c.n===1?"local":"locais"}</div>
     </div>`).join("");
 }
@@ -317,6 +454,16 @@ function addressRow(endereco,link){
   return `<div class="row"><span class="ri">📍</span><span class="addr-wrap">${esc(endereco)}${mapLink}</span></div>`;
 }
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function slugify(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,58)||"local";}
+function hashText(value){let h=2166136261;for(const ch of String(value||"")){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(36);}
+function placeToken(r){const f=guiaCardFields(r);return slugify(f.nome)+"-"+hashText([f.nome,f.endereco,phoneDigits(f.telefone||f.whatsapp)].join("|"));}
+function tagTextColor(hex){
+  const value=String(hex||"").replace("#","");
+  if(value.length!==6)return"#fff";
+  const rgb=[0,2,4].map(i=>parseInt(value.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));
+  return (.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2])>.5?"#17324d":"#fff";
+}
+function tagStyle(color){return `background:${color};color:${tagTextColor(color)}`;}
 function cleanPublicText(value){
   const text=String(value||"").trim();
   if(!text)return"";
@@ -377,10 +524,17 @@ function fitThumb(img){
   box.classList.toggle("portrait",ratio<.86);
   box.classList.toggle("square",ratio>=.86&&ratio<=1.18);
 }
-function mediaBlock(r,nome){
+function isLikelyLogo(r,media){
+  const kind=firstValue(r,["foto_tipo","tipo_imagem","imagem_tipo","tipo_foto"]);
+  const hint=[kind,media&&media.nome].filter(Boolean).join(" ");
+  if(/fachada|ambiente|local|evento|equipe|paisagem|atrativo/i.test(hint))return false;
+  return /logo|logomarca|marca/i.test(hint)||/\.png(?:\?|$)/i.test(String((media&&media.src)||""));
+}
+function mediaBlock(r,nome,variant){
   const media=firstMediaInfo(r);
   if(!media)return"";
-  if(isFotoImg(media.src,media.mime))return `<div class="thumb"><img src="${fotoSrc(media.src,media.mime)}" alt="Foto de ${esc(nome)}" loading="lazy" referrerpolicy="no-referrer" onload="fitThumb(this)" onerror="this.closest('.thumb').outerHTML='<a class=&quot;file-link&quot; href=&quot;${esc(media.viewUrl||media.src)}&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>📎 ${esc(media.nome||"Abrir arquivo")}</a>'"></div>`;
+  const mediaType=isLikelyLogo(r,media)?"logo-media":"photo-media";
+  if(isFotoImg(media.src,media.mime))return `<div class="thumb ${mediaType} ${variant||""}"><img src="${fotoSrc(media.src,media.mime)}" alt="Foto de ${esc(nome)}" loading="lazy" referrerpolicy="no-referrer" onload="fitThumb(this)" onerror="this.closest('.thumb').outerHTML='<a class=&quot;file-link&quot; href=&quot;${esc(media.viewUrl||media.src)}&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>📎 ${esc(media.nome||"Abrir arquivo")}</a>'"></div>`;
   return `<a class="file-link" href="${media.viewUrl||media.src}" target="_blank" rel="noopener">📎 ${esc(media.nome||"Abrir arquivo")}</a>`;
 }
 function rodoviariaCard(){
@@ -448,55 +602,192 @@ function onibusCard(r){
     ${cleanPublicText(r.observacoes)?`<div class="desc">${esc(cleanPublicText(r.observacoes))}</div>`:""}
   </div>`;
 }
-function openCat(key){
+function categoryInfo(key){
   const cat=CATS.find(c=>c.key===key)||MODCAT.find(m=>m.key===key);
-  const idx=MODCAT.findIndex(m=>m.key===key);const color=colorFor(idx);
-  const items=visiveis(key);
-  document.getElementById("dBadge").style.background=color+"1a";
-  document.getElementById("dBadge").style.color=color;
+  if(!cat)return null;
+  const idx=MODCAT.findIndex(m=>m.key===key);
+  return {...cat,color:cat.color||colorFor(Math.max(0,idx))};
+}
+function compactPlaceCard(r,key,color){
+  const f=guiaCardFields(r);
+  const token=placeToken(r);
+  const wa=whatsHref(f.whatsapp||f.telefone);
+  const map=mapsHref(f.endereco,f.mapas);
+  const media=mediaBlock(r,f.nome,"card-media")||'<div class="thumb no-media" aria-hidden="true">📍</div>';
+  const tag=r.categoria||categoryInfo(key).label;
+  return `<article class="item place-card">
+    ${media}
+    <span class="tag" style="${tagStyle(color)}">${esc(tag)}</span>
+    <h3>${esc(f.nome)}</h3>
+    <div class="place-meta">${esc(f.endereco||f.produtos||"Consulte os detalhes deste cadastro.")}</div>
+    <div class="card-actions">
+      <button class="action-btn primary" type="button" onclick="openPlace('${key}','${token}')">Ver detalhes</button>
+      ${wa?`<a class="action-btn whatsapp" href="${esc(wa)}" target="_blank" rel="noopener" aria-label="Falar com ${esc(f.nome)} pelo WhatsApp" title="WhatsApp">💬</a>`:""}
+      ${map?`<a class="action-btn" href="${esc(map)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(f.nome)} no mapa" title="Abrir no mapa">📍</a>`:""}
+    </div>
+  </article>`;
+}
+function isAccessibleRecord(r){
+  const value=normalizeSearch(firstValue(r,["acessibilidade","acessivel","acessivel_desc"])).trim();
+  if(!value||/nao informado|nao possui|sem acessibilidade/.test(value))return false;
+  return /^sim\b/.test(value)||/rampa|cadeirante|acessibilidade/.test(value);
+}
+function getFilteredCategoryItems(){
+  const query=normalizeSearch(detailQuery).trim();
+  return visiveis(activeCategory).filter(r=>{
+    const f=guiaCardFields(r);
+    if(detailFilter==="foto"&&!firstMediaInfo(r))return false;
+    if(detailFilter==="whatsapp"&&!whatsHref(f.whatsapp||f.telefone))return false;
+    if(detailFilter==="acessivel"&&!isAccessibleRecord(r))return false;
+    if(!query)return true;
+    return normalizeSearch([f.nome,f.endereco,f.produtos,f.descricao,r.categoria].join(" ")).includes(query);
+  });
+}
+function renderCategory(){
+  const cat=categoryInfo(activeCategory);
+  if(!cat){closeCat(false);return;}
+  const all=visiveis(activeCategory);
+  document.getElementById("dBadge").style.background=cat.color+"1a";
+  document.getElementById("dBadge").style.color=cat.color;
   document.getElementById("dBadge").textContent=cat.icon||"📍";
   document.getElementById("dTitle").textContent=cat.label;
-  document.getElementById("dCount").textContent=items.length+(items.length===1?" local cadastrado":" locais cadastrados");
+  document.title=cat.label+" · Guia da Cidade de Itatinga";
+  document.getElementById("dCount").textContent=all.length+(all.length===1?" local cadastrado":" locais cadastrados");
+  const tools=document.getElementById("detailTools");
   const dl=document.getElementById("dList");
-  const aviso=(key==="horarios_onibus")?`<div class="aviso-cat">⚠️ <b>Aviso:</b> A Diretoria de Turismo apenas compartilha estes horários como cortesia ao visitante. Eles são definidos pelas empresas de transporte e <b>podem sofrer alterações sem aviso prévio</b>. A Diretoria não se responsabiliza por mudanças — confirme sempre com a empresa responsável.</div>`:"";
-  let body;
-  if(key==="horarios_onibus"){
-    body=rodoviariaCard()+(items.length?items.map(onibusCard).join(""):'<div class="empty" style="grid-column:1/-1">Sem linhas cadastradas.</div>');
-  } else {
-    body=items.map(r=>{
-      const f=guiaCardFields(r);
-      const nome=f.nome;
-      const site=f.site;
-      const siteUrl=siteHref(site);
-      const insta=f.redes||site;
-      return `<div class="item">
-        <h3>${esc(nome)}</h3>
-        ${mediaBlock(r,nome)}
-        ${r.categoria?`<span class="tag" style="background:${color}">${esc(r.categoria)}</span>`:""}
-        ${f.responsavel&&f.responsavel!==nome?fieldRow("👤",f.responsavel):""}
-        ${addressRow(f.endereco,f.mapas)}
-        ${phoneRow(f.telefone,f.whatsapp)}
-        ${fieldRow("✉️",f.email,f.email?("mailto:"+f.email):null)}
-        ${siteUrl?fieldRow("🌐",site,siteUrl):""}
-        ${instagramRow(insta)}
-        ${fieldRow("🕒",f.horario)}
-        ${fieldRow("🛍️",f.produtos)}
-        ${f.descricao?`<div class="desc">${esc(f.descricao)}</div>`:""}
-      </div>`;}).join("")|| '<div class="empty" style="grid-column:1/-1">Sem locais nesta categoria ainda.</div>';
+  const aviso=(activeCategory==="horarios_onibus")?`<div class="aviso-cat">⚠️ <b>Aviso:</b> A Diretoria de Turismo apenas compartilha estes horários como cortesia ao visitante. Eles são definidos pelas empresas de transporte e <b>podem sofrer alterações sem aviso prévio</b>. Confirme sempre com a empresa responsável.</div>`:"";
+  if(activeCategory==="horarios_onibus"){
+    tools.style.display="none";
+    dl.innerHTML=aviso+rodoviariaCard()+(all.length?all.map(onibusCard).join(""):'<div class="empty" style="grid-column:1/-1">Sem linhas cadastradas.</div>');
+    return;
   }
+  tools.style.display="flex";
+  const filtered=getFilteredCategoryItems();
+  const shown=filtered.slice(0,detailLimit);
+  document.getElementById("resultsNote").textContent=filtered.length===all.length?`${all.length} ${all.length===1?"resultado":"resultados"}`:`${filtered.length} de ${all.length} resultados`;
+  let body=shown.map(r=>compactPlaceCard(r,activeCategory,cat.color)).join("");
+  if(!body)body='<div class="empty" style="grid-column:1/-1">Nenhum local corresponde aos filtros selecionados.</div>';
+  if(filtered.length>shown.length)body+=`<div class="load-wrap"><button class="load-more" type="button" onclick="loadMorePlaces()">Mostrar mais ${Math.min(12,filtered.length-shown.length)} locais</button></div>`;
   dl.innerHTML=aviso+body;
+}
+function openCat(key,updateHistory=true){
+  if(activeCategory!==key){detailFilter="todos";detailQuery="";detailLimit=12;}
+  activeCategory=key;
+  activePlaceToken="";
+  document.getElementById("detailSearch").value=detailQuery;
+  document.querySelectorAll(".filter-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.filter===detailFilter));
+  renderCategory();
   document.getElementById("gridView").classList.add("hide");
+  document.getElementById("profileView").classList.remove("show");
   document.getElementById("detailView").classList.add("show");
+  if(updateHistory)history.pushState(null,"",location.pathname+location.search+"#categoria="+encodeURIComponent(key));
   window.scrollTo({top:0,behavior:"smooth"});
 }
-function closeCat(){
-  document.getElementById("detailView").classList.remove("show");
-  document.getElementById("gridView").classList.remove("hide");
+function setDetailFilter(filter){
+  detailFilter=["todos","foto","whatsapp","acessivel"].includes(filter)?filter:"todos";
+  detailLimit=12;
+  document.querySelectorAll(".filter-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.filter===detailFilter));
+  renderCategory();
 }
-document.getElementById("q").addEventListener("input",e=>{closeCat();renderGrid(e.target.value);});
-// re-sync ao retornar para a aba
-window.addEventListener("focus",async()=>{await loadData();if(!document.getElementById("detailView").classList.contains("show"))renderGrid(document.getElementById("q").value);});
-(async function(){await loadData();renderGrid("");})();
+function loadMorePlaces(){detailLimit+=12;renderCategory();}
+function renderProfile(r,key){
+  const cat=categoryInfo(key);
+  const f=guiaCardFields(r);
+  const wa=whatsHref(f.whatsapp||f.telefone);
+  const call=telHref(f.telefone||f.whatsapp);
+  const map=mapsHref(f.endereco,f.mapas);
+  const site=siteHref(f.site);
+  const insta=instagramHref(f.redes||f.site);
+  const media=mediaBlock(r,f.nome,"profile-photo")||'<div class="thumb no-media profile-placeholder" aria-hidden="true">📍</div>';
+  const categoryLabel=r.categoria||cat.label;
+  const products=f.produtos?`<div class="profile-copy"><h2>Produtos e serviços</h2><p>${esc(f.produtos)}</p></div>`:"";
+  const description=f.descricao?`<div class="profile-copy"><h2>Sobre</h2><p>${esc(f.descricao)}</p></div>`:"";
+  document.getElementById("profileContent").innerHTML=`
+    <div class="profile-layout">
+      <div class="profile-media">${media}</div>
+      <div class="profile-main">
+        <span class="tag" style="${tagStyle(cat.color)}">${esc(categoryLabel)}</span>
+        <h1>${esc(f.nome)}</h1>
+        <div class="profile-actions">
+          ${wa?`<a class="action-btn whatsapp" href="${esc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>`:""}
+          ${call?`<a class="action-btn" href="${esc(call)}">📞 Ligar</a>`:""}
+          ${map?`<a class="action-btn primary" href="${esc(map)}" target="_blank" rel="noopener">📍 Como chegar</a>`:""}
+        </div>
+        <div class="profile-info">
+          ${addressRow(f.endereco,f.mapas)}
+          ${phoneRow(f.telefone,f.whatsapp)}
+          ${fieldRow("✉️",f.email,f.email?("mailto:"+f.email):null)}
+          ${site?fieldRow("🌐",f.site,site):""}
+          ${insta?fieldRow("📷","Instagram",insta):""}
+          ${fieldRow("🕒",f.horario)}
+        </div>
+        ${products}${description}
+        <div class="official-note">Conteúdo integrante do Inventário Municipal de Turismo, atualizado pela Diretoria Municipal de Turismo de Itatinga.</div>
+      </div>
+    </div>`;
+}
+function openPlace(key,token,updateHistory=true){
+  const record=visiveis(key).find(r=>placeToken(r)===token);
+  if(!record){openCat(key,updateHistory);return;}
+  activeCategory=key;
+  activePlaceToken=token;
+  document.title=guiaCardFields(record).nome+" · Guia da Cidade de Itatinga";
+  renderProfile(record,key);
+  document.getElementById("gridView").classList.add("hide");
+  document.getElementById("detailView").classList.remove("show");
+  document.getElementById("profileView").classList.add("show");
+  if(updateHistory)history.pushState(null,"",location.pathname+location.search+"#local="+encodeURIComponent(key)+"/"+encodeURIComponent(token));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function closePlace(){
+  if(activeCategory)openCat(activeCategory,true);else closeCat(true);
+}
+function closeCat(updateHistory=true){
+  document.getElementById("detailView").classList.remove("show");
+  document.getElementById("profileView").classList.remove("show");
+  document.getElementById("gridView").classList.remove("hide");
+  activeCategory="";
+  activePlaceToken="";
+  document.title="Guia da Cidade · Turismo Itatinga – SP";
+  if(updateHistory)history.pushState(null,"",location.pathname+location.search);
+}
+function showToast(message){
+  const toast=document.getElementById("toast");
+  toast.textContent=message;
+  toast.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer=setTimeout(()=>toast.classList.remove("show"),2400);
+}
+async function shareCurrentPlace(){
+  const record=visiveis(activeCategory).find(r=>placeToken(r)===activePlaceToken);
+  if(!record)return;
+  const title=guiaCardFields(record).nome+" · Guia da Cidade de Itatinga";
+  const url=location.href;
+  if(navigator.share){try{await navigator.share({title,url});return;}catch(e){if(e&&e.name==="AbortError")return;}}
+  try{await navigator.clipboard.writeText(url);showToast("Link copiado");}
+  catch(e){const input=document.createElement("textarea");input.value=url;document.body.appendChild(input);input.select();document.execCommand("copy");input.remove();showToast("Link copiado");}
+}
+function routeFromHash(){
+  const hash=location.hash.replace(/^#/,"");
+  if(hash.startsWith("local=")){
+    const parts=hash.slice(6).split("/");
+    if(parts.length>=2){openPlace(decodeURIComponent(parts[0]),decodeURIComponent(parts.slice(1).join("/")),false);return;}
+  }
+  if(hash.startsWith("categoria=")){openCat(decodeURIComponent(hash.slice(10)),false);return;}
+  closeCat(false);
+  renderGrid(document.getElementById("q").value);
+}
+document.getElementById("detailSearch").addEventListener("input",e=>{detailQuery=e.target.value;detailLimit=12;renderCategory();});
+document.getElementById("q").addEventListener("input",e=>{
+  closeCat(false);
+  history.replaceState(null,"",location.pathname+location.search);
+  renderGrid(e.target.value);
+});
+window.addEventListener("popstate",routeFromHash);
+window.addEventListener("hashchange",routeFromHash);
+// Recarrega os dados públicos quando o visitante retorna para a aba.
+window.addEventListener("focus",async()=>{await loadData();buildCats();routeFromHash();});
+(async function(){await loadData();buildCats();routeFromHash();})();
 </script>
 <a class="fab-sys" href="/" title="Acesso ao sistema de gestão" style="display:none">⚙️</a>
 </body>
