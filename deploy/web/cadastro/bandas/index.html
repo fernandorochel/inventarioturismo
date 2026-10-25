@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro de bandas e artistas musicais | Inventário de Itatinga</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f2933;background:#f5f7fa}
+    *{box-sizing:border-box}
+    body{margin:0}
+    header{background:#fff;border-bottom:1px solid #e6eaf0}
+    .topbar{max-width:1040px;margin:auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{display:flex;align-items:center;gap:18px}
+    .brand img{width:min(230px,42vw);height:auto;max-height:70px;object-fit:contain}
+    .brand span{font-weight:700;color:#062f5f;font-size:.92rem}
+    .back{color:#0b63b6;text-decoration:none;font-weight:700;font-size:.9rem}
+    .back:hover{text-decoration:underline}
+    main{max-width:1040px;margin:28px auto 56px;padding:0 20px}
+    .intro,.panel{background:#fff;border:1px solid #e6eaf0;border-radius:16px;box-shadow:0 12px 32px rgba(6,47,95,.07)}
+    .intro{padding:30px 34px;margin-bottom:20px;border-top:6px solid #0b63b6}
+    .eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#0b63b6}
+    h1{color:#062f5f;font-size:clamp(1.65rem,4vw,2.5rem);line-height:1.15;margin:8px 0 12px}
+    .intro p{max-width:760px;line-height:1.55;color:#52616b;margin:0}
+    .panel{padding:28px 34px}
+    h2{font-size:1.18rem;color:#062f5f;margin:0 0 18px}
+    .section{border-top:1px solid #e6eaf0;margin-top:24px;padding-top:22px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px}
+    .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .full{grid-column:1/-1}
+    label{font-weight:700;font-size:.93rem}
+    input,select,textarea{width:100%;font:inherit;color:#1f2933;border:1px solid #c8d3df;border-radius:9px;padding:11px 12px;background:#fff}
+    input:focus,select:focus,textarea:focus{outline:3px solid rgba(11,99,182,.16);border-color:#0b63b6}
+    textarea{resize:vertical;min-height:94px}
+    .hint{font-size:.82rem;color:#52616b;line-height:1.4;margin:0}
+    .check{display:flex;align-items:flex-start;gap:10px;font-weight:400;line-height:1.45}
+    .check input{width:18px;height:18px;flex:0 0 auto;margin:2px 0 0}
+    .notice{display:none;padding:14px 16px;border-radius:9px;margin-bottom:20px;line-height:1.45}
+    .notice.ok{display:block;background:#e9f7ea;border:1px solid #77c585;color:#164d22}
+    .notice.err{display:block;background:#fff1ef;border:1px solid #e89b91;color:#7b2118}
+    .upload{border:1px dashed #9db2c7;border-radius:10px;padding:16px;background:#f8fbff}
+    .upload img{max-width:230px;max-height:180px;display:block;margin-top:12px;border-radius:8px}
+    button{font:inherit;font-weight:700;cursor:pointer;border-radius:9px;padding:12px 20px}
+    .actions{display:flex;align-items:center;gap:12px;margin-top:26px}
+    .primary{background:#0b63b6;color:#fff;border:1px solid #0b63b6}
+    .primary:hover{background:#084f95}
+    .primary:disabled{opacity:.6;cursor:wait}
+    .secondary{background:#fff;color:#0b63b6;border:1px solid #9db2c7}
+    footer{text-align:center;font-size:.82rem;color:#52616b;padding:0 20px 28px}
+    .hp{position:absolute;left:-9999px;opacity:0}
+    @media(max-width:700px){.topbar{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.full{grid-column:auto}.intro,.panel{padding:22px}.actions{flex-direction:column-reverse;align-items:stretch}button{width:100%}}
+  </style>
+</head>
+<body>
+  <header><div class="topbar">
+    <div class="brand"><img src="/assets/logo-turismo-2025-itatinga.png" alt="Turismo Itatinga - SP"><span>Inventário Municipal de Turismo</span></div>
+    <a class="back" href="/cadastro/">Outras categorias de cadastro</a>
+  </div></header>
+  <main>
+    <section class="intro">
+      <div class="eyebrow">Cultura e apresentações</div>
+      <h1>Cadastro de bandas e artistas musicais de Itatinga</h1>
+      <p>Reúna as informações do seu grupo para o Inventário Municipal. O cadastro ficará pendente de análise pela Diretoria de Turismo. O envio não garante apresentação, contratação ou divulgação pública.</p>
+    </section>
+    <section class="panel" aria-label="Formulário de cadastro musical">
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <form id="bandForm">
+        <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off">
+        <input type="hidden" name="modulo" value="cantores_locais">
+        <h2>Identificação e contato</h2>
+        <div class="grid">
+          <div class="field"><label for="nome">Nome artístico da banda ou artista *</label><input id="nome" name="nome" maxlength="180" required></div>
+          <div class="field"><label for="tipo_artista">Formação *</label><select id="tipo_artista" name="tipo_artista" required><option value="">Selecione</option><option>Artista solo</option><option>Dupla</option><option>Banda</option><option>Grupo musical</option><option>Outro</option></select></div>
+          <div class="field"><label for="municipio_sede">Município de origem ou sede *</label><input id="municipio_sede" name="municipio_sede" maxlength="120" value="Itatinga/SP" required></div>
+          <div class="field"><label for="responsavel">Responsável pelo contato *</label><input id="responsavel" name="responsavel" maxlength="180" autocomplete="name" required></div>
+          <div class="field"><label for="telefone">Telefone ou WhatsApp profissional *</label><input id="telefone" name="telefone" maxlength="80" type="tel" autocomplete="tel" required></div>
+          <div class="field"><label for="email">E-mail profissional</label><input id="email" name="email" maxlength="180" type="email" autocomplete="email"></div>
+          <div class="field"><label for="instagram">Instagram</label><input id="instagram" name="instagram" maxlength="180" placeholder="@perfil"></div>
+          <div class="field"><label for="site">Site ou rede social principal</label><input id="site" name="site" maxlength="700" placeholder="https://..."></div>
+        </div>
+        <div class="section">
+          <h2>Perfil artístico e apresentação</h2>
+          <div class="grid">
+            <div class="field"><label for="genero_musical">Gênero musical principal *</label><select id="genero_musical" name="genero_musical" required><option value="">Selecione</option><option>Sertanejo</option><option>Gospel</option><option>MPB</option><option>Rock</option><option>Pop</option><option>Pagode/Samba</option><option>Forró</option><option>Instrumental</option><option>Outros</option></select></div>
+            <div class="field"><label for="integrantes">Integrantes em palco *</label><input id="integrantes" name="integrantes" type="number" min="1" max="100" required></div>
+            <div class="field full"><label for="descricao">Breve apresentação e trajetória</label><textarea id="descricao" name="descricao" maxlength="2400" placeholder="Conte quando o grupo começou e como atua em Itatinga."></textarea></div>
+            <div class="field full"><label for="repertorio">Repertório principal *</label><textarea id="repertorio" name="repertorio" maxlength="1600" required placeholder="Ex.: rock nacional e internacional; músicas autorais e covers."></textarea></div>
+            <div class="field"><label for="duracao">Duração habitual da apresentação</label><input id="duracao" name="duracao" maxlength="80" placeholder="Ex.: 60 minutos"></div>
+            <div class="field"><label for="formato_apresentacao">Formato disponível</label><select id="formato_apresentacao" name="formato_apresentacao"><option value="">Selecione</option><option>Acústico</option><option>Amplificado</option><option>Ambos</option><option>Outro</option></select></div>
+            <div class="field full"><label for="necessidades_tecnicas">Necessidades técnicas básicas</label><textarea id="necessidades_tecnicas" name="necessidades_tecnicas" maxlength="1600" placeholder="Informe necessidades de som, microfones, palco e energia, se houver."></textarea></div>
+            <div class="field full"><label for="portfolio">Link para áudio, vídeo ou portfólio</label><input id="portfolio" name="portfolio" maxlength="700" placeholder="https://..."></div>
+            <div class="field full"><label for="foto">Foto de divulgação (opcional)</label><div class="upload"><input id="foto" type="file" accept="image/jpeg,image/png,image/webp"><p class="hint">Envie somente uma foto que o grupo possa autorizar para análise. Formatos JPG, PNG ou WEBP; até 20 MB.</p><div id="preview"></div></div></div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Declarações</h2>
+          <div class="grid">
+            <label class="check full"><input id="vinculo_itatinga" type="checkbox" required>Declaro que a banda ou o artista tem origem ou atuação em Itatinga e que as informações enviadas são verdadeiras. *</label>
+            <label class="check full"><input id="autoriza_divulgacao" type="checkbox">Autorizo a divulgação institucional do nome artístico, da apresentação, dos links e da foto enviada, após conferência da Diretoria.</label>
+            <label class="check full"><input id="autoriza_contato" type="checkbox">Autorizo que o contato profissional informado seja divulgado junto ao perfil, se houver divulgação.</label>
+            <label class="check full"><input id="aceite_responsabilidade" type="checkbox" required>Confirmo que sou responsável pelo envio e tenho autorização para encaminhar os materiais fornecidos. *</label>
+          </div>
+          <p class="hint" style="margin-top:16px">Dados de contato serão usados pela Diretoria para conferir o cadastro e tratar de possíveis apresentações. Documentos pessoais, valores e dados bancários serão solicitados somente em procedimento próprio, quando aplicável.</p>
+        </div>
+        <div class="actions"><button type="reset" class="secondary">Limpar</button><button id="submitBtn" type="submit" class="primary">Enviar cadastro</button></div>
+      </form>
+    </section>
+  </main>
+  <footer>Diretoria de Lazer, Turismo e Eventos · Prefeitura Municipal de Itatinga/SP</footer>
+  <script>
+    const form = document.getElementById("bandForm");
+    const photo = document.getElementById("foto");
+    const preview = document.getElementById("preview");
+    const notice = document.getElementById("notice");
+    const submit = document.getElementById("submitBtn");
+    let previewUrl = "";
+    function showNotice(type, message) {
+      notice.className = "notice " + type;
+      notice.textContent = message;
+      notice.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function clearPreview() {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = "";
+      preview.replaceChildren();
+    }
+    photo.addEventListener("change", () => {
+      clearPreview();
+      const file = photo.files[0];
+      if (!file) return;
+      if (!/^image\/(png|jpe?g|webp)$/i.test(file.type) || file.size > 20 * 1024 * 1024) {
+        photo.value = "";
+        showNotice("err", "Envie uma foto JPG, PNG ou WEBP de até 20 MB.");
+        return;
+      }
+      previewUrl = URL.createObjectURL(file);
+      const image = document.createElement("img");
+      image.src = previewUrl;
+      image.alt = "Pré-visualização da foto enviada";
+      preview.appendChild(image);
+    });
+    form.addEventListener("reset", () => {
+      clearPreview();
+      notice.className = "notice";
+      notice.textContent = "";
+    });
+    function fileDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Não foi possível ler a foto."));
+        reader.readAsDataURL(file);
+      });
+    }
+    async function optimizedDataUrl(file) {
+      if (file.size <= 4 * 1024 * 1024) return fileDataUrl(file);
+      const sourceUrl = URL.createObjectURL(file);
+      try {
+        const image = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error("Foto inválida."));
+          img.src = sourceUrl;
+        });
+        const scale = Math.min(1, 1800 / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.84);
+      } finally {
+        URL.revokeObjectURL(sourceUrl);
+      }
+    }
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      submit.disabled = true;
+      submit.textContent = "Enviando...";
+      try {
+        const values = Object.fromEntries(new FormData(form).entries());
+        values.vinculo_itatinga = document.getElementById("vinculo_itatinga").checked;
+        values.autoriza_divulgacao = document.getElementById("autoriza_divulgacao").checked;
+        values.autoriza_contato = document.getElementById("autoriza_contato").checked;
+        values.aceite_responsabilidade = document.getElementById("aceite_responsabilidade").checked;
+        const file = photo.files[0];
+        if (file) {
+          const uploadResponse = await fetch("/api/public-cadastro/upload", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileName: file.name, dataUrl: await optimizedDataUrl(file), website: values.website, modulo: "cantores_locais" })
+          });
+          const uploaded = await uploadResponse.json().catch(() => ({}));
+          if (!uploadResponse.ok) throw new Error(uploaded.error || "Não foi possível enviar a foto.");
+          values.foto = uploaded.file;
+        }
+        const response = await fetch("/api/public-cadastro", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Não foi possível salvar o cadastro.");
+        form.reset();
+        showNotice("ok", `Cadastro enviado. Protocolo: ${result.protocolo}. Ele ficará pendente para análise da Diretoria de Turismo.`);
+      } catch (error) {
+        showNotice("err", error.message || "Não foi possível enviar o cadastro.");
+      } finally {
+        submit.disabled = false;
+        submit.textContent = "Enviar cadastro";
+      }
+    });
+  </script>
+</body>
+</html>
