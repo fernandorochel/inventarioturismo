@@ -86,7 +86,7 @@
             <div class="field full"><label for="repertorio">Repertório principal *</label><textarea id="repertorio" name="repertorio" maxlength="1600" required placeholder="Ex.: rock nacional e internacional; músicas autorais e covers."></textarea></div>
             <div class="field"><label for="duracao">Duração habitual da apresentação</label><input id="duracao" name="duracao" maxlength="80" placeholder="Ex.: 60 minutos"></div>
             <div class="field"><label for="formato_apresentacao">Formato disponível</label><select id="formato_apresentacao" name="formato_apresentacao"><option value="">Selecione</option><option>Acústico</option><option>Amplificado</option><option>Ambos</option><option>Outro</option></select></div>
-            <div class="field full"><label for="necessidades_tecnicas">Necessidades técnicas básicas</label><textarea id="necessidades_tecnicas" name="necessidades_tecnicas" maxlength="1600" placeholder="Informe necessidades de som, microfones, palco e energia, se houver."></textarea></div>
+            <div class="field"><label for="data_cadastro">Data do cadastro</label><input id="data_cadastro" name="data_cadastro" type="text" readonly aria-describedby="data_cadastro_ajuda"><p class="hint" id="data_cadastro_ajuda">Preenchida automaticamente na data do envio.</p></div>
             <div class="field full"><label for="portfolio">Link para áudio, vídeo ou portfólio</label><input id="portfolio" name="portfolio" maxlength="700" placeholder="https://..."></div>
             <div class="field full"><label for="foto">Foto de divulgação (opcional)</label><div class="upload"><input id="foto" type="file" accept="image/jpeg,image/png,image/webp"><p class="hint">Envie somente uma foto que o grupo possa autorizar para análise. Formatos JPG, PNG ou WEBP; até 20 MB.</p><div id="preview"></div></div></div>
           </div>
@@ -112,7 +112,14 @@
     const preview = document.getElementById("preview");
     const notice = document.getElementById("notice");
     const submit = document.getElementById("submitBtn");
+    const registrationDate = document.getElementById("data_cadastro");
     let previewUrl = "";
+    function updateRegistrationDate() {
+      const today = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date());
+      registrationDate.value = today;
+      registrationDate.defaultValue = today;
+    }
+    updateRegistrationDate();
     function showNotice(type, message) {
       notice.className = "notice " + type;
       notice.textContent = message;
@@ -173,6 +180,7 @@
     }
     form.addEventListener("submit", async event => {
       event.preventDefault();
+      updateRegistrationDate();
       if (!form.reportValidity()) return;
       submit.disabled = true;
       submit.textContent = "Enviando...";
