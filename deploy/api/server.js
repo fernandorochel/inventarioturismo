@@ -808,7 +808,9 @@ app.post("/api/public-cadastro", async (req, res) => {
     const produtosServicos = cleanLongText(body.produtos_servicos, 1600);
     const observacoes = cleanLongText(body.observacoes, 1600);
     const autorizaGuia = body.autoriza_guia === true || body.autoriza_guia === "Sim" ? "Sim" : "Não";
-    const now = new Date().toISOString();
+    const submittedAt = new Date();
+    const now = submittedAt.toISOString();
+    const dataCadastro = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(submittedAt);
 
     const record = {
       id: `publico-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`,
@@ -843,7 +845,7 @@ app.post("/api/public-cadastro", async (req, res) => {
         duracao: cleanText(body.duracao, 80),
         formato_apresentacao: cleanText(body.formato_apresentacao, 120),
         repertorio,
-        necessidades_tecnicas: cleanLongText(body.necessidades_tecnicas, 1600),
+        data_cadastro: dataCadastro,
         portfolio: cleanUrl(body.portfolio, 700),
         autorizacao_divulgacao: body.autoriza_divulgacao === true ? "Sim" : "Não",
         autorizacao_contato: body.autoriza_contato === true ? "Sim" : "Não"
