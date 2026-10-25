@@ -843,7 +843,6 @@ app.post("/api/public-cadastro", async (req, res) => {
         vinculo_itatinga: "Declarado pelo responsável",
         integrantes,
         duracao: cleanText(body.duracao, 80),
-        formato_apresentacao: cleanText(body.formato_apresentacao, 120),
         repertorio,
         data_cadastro: dataCadastro,
         portfolio: cleanUrl(body.portfolio, 700),
