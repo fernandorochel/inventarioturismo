@@ -132,6 +132,15 @@ app.get(["/cadastro", "/cadastro/", "/cadastro/index.html"], (req, res, next) =>
   });
 });
 
+app.get(["/cadastro/bandas", "/cadastro/bandas/", "/cadastro/bandas/index.html"], (req, res, next) => {
+  const bandasPath = path.join(__dirname, "..", "web", "cadastro", "bandas", "index.html");
+  fs.readFile(bandasPath, "utf8", (err, html) => {
+    if (err) return next(err);
+    noStore(res);
+    res.type("html").send(html);
+  });
+});
+
 // Serve os arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, "..", "web"), {
   setHeaders(res, filePath) {
@@ -449,6 +458,7 @@ const PUBLIC_CADASTRO_MODULES = Object.freeze({
   trailers_alimentacao: "Trailers de Alimentação",
   vendedores_ambulantes: "Vendedores Ambulantes",
   empresas_brinquedos: "Empresas de Brinquedos",
+  cantores_locais: "Bandas e Artistas Musicais",
   apicultores: "Apicultores",
   agencias: "Agências de Viagens e Receptivo",
   turismo_rural: "Turismo Rural",
@@ -708,7 +718,7 @@ app.post("/api/uploads", requireAuth, requireEditor, async (req, res) => {
 
 app.post("/api/public-cadastro/upload", async (req, res) => {
   try {
-    const { fileName, dataUrl, website } = req.body || {};
+    const { fileName, dataUrl, website, modulo } = req.body || {};
     if (cleanText(website, 120)) return res.status(400).json({ error: "Envio inválido" });
     const parsed = parseDataUrl(dataUrl);
     const isImage = /^image\/(png|jpe?g|webp)$/i.test(parsed.mimeType);
@@ -727,8 +737,9 @@ app.post("/api/public-cadastro/upload", async (req, res) => {
       return res.status(400).json({ error: "A foto otimizada ainda ficou muito grande. Tente outra imagem." });
     }
 
+    const isMusicUpload = modulo === "cantores_locais";
     const file = await uploadToLocalStorage({
-      fileName: `fachada-${prepared.fileName}`,
+      fileName: `${isMusicUpload ? "artista" : "fachada"}-${isMusicUpload ? prepared.fileName.replace(/[^A-Za-z0-9._-]/g, "-") : prepared.fileName}`,
       mimeType: prepared.mimeType,
       buffer: prepared.buffer
     });
@@ -757,6 +768,7 @@ app.post("/api/public-cadastro", async (req, res) => {
     const modulo = cleanText(body.modulo, 80);
     const moduloLabel = PUBLIC_CADASTRO_MODULES[modulo];
     if (!moduloLabel) return res.status(400).json({ error: "Escolha uma categoria válida" });
+    const isMusic = modulo === "cantores_locais";
 
     const nome = cleanText(body.nome, 180);
     const responsavel = cleanText(body.responsavel, 180);
@@ -765,12 +777,30 @@ app.post("/api/public-cadastro", async (req, res) => {
     const foto = body.foto && typeof body.foto === "object" ? body.foto : {};
     const fotoUrl = cleanText(foto.imageUrl || foto.directUrl || foto.viewUrl || body.foto_url, 700);
     const aceite = body.aceite_responsabilidade === true || body.aceite_responsabilidade === "Sim";
+    const genero = cleanText(body.genero_musical, 80);
+    const tipoArtista = cleanText(body.tipo_artista, 60);
+    const municipioSede = cleanText(body.municipio_sede, 120);
+    const integrantes = Number(body.integrantes);
+    const repertorio = cleanLongText(body.repertorio, 1600);
 
-    if (!nome) return res.status(400).json({ error: "Informe o nome do estabelecimento ou atrativo" });
+    if (!nome) return res.status(400).json({ error: isMusic ? "Informe o nome artístico" : "Informe o nome do estabelecimento ou atrativo" });
     if (!responsavel) return res.status(400).json({ error: "Informe o responsável pelo cadastro" });
     if (!telefone) return res.status(400).json({ error: "Informe telefone ou WhatsApp" });
-    if (!endereco) return res.status(400).json({ error: "Informe o endereço" });
-    if (!fotoUrl) return res.status(400).json({ error: "A foto da fachada é obrigatória" });
+    if (isMusic && !["Artista solo", "Dupla", "Banda", "Grupo musical", "Outro"].includes(tipoArtista))
+      return res.status(400).json({ error: "Escolha uma formação válida" });
+    if (isMusic && !municipioSede) return res.status(400).json({ error: "Informe o município de origem ou sede" });
+    if (isMusic && body.vinculo_itatinga !== true)
+      return res.status(400).json({ error: "Confirme o vínculo de origem ou atuação em Itatinga" });
+    if (isMusic && !["Sertanejo", "Gospel", "MPB", "Rock", "Pop", "Pagode/Samba", "Forró", "Instrumental", "Outros"].includes(genero))
+      return res.status(400).json({ error: "Escolha um gênero musical válido" });
+    if (isMusic && (!Number.isInteger(integrantes) || integrantes < 1 || integrantes > 100))
+      return res.status(400).json({ error: "Informe a quantidade de integrantes em palco" });
+    if (isMusic && !repertorio) return res.status(400).json({ error: "Descreva o repertório principal" });
+    const musicPhotoPrefix = `${uploadPublicPath.replace(/\/$/, "")}/`;
+    if (isMusic && fotoUrl && (!fotoUrl.startsWith(musicPhotoPrefix) || !/^[A-Za-z0-9._-]+$/.test(fotoUrl.slice(musicPhotoPrefix.length))))
+      return res.status(400).json({ error: "Envie a foto pelo formulário" });
+    if (!isMusic && !endereco) return res.status(400).json({ error: "Informe o endereço" });
+    if (!isMusic && !fotoUrl) return res.status(400).json({ error: "A foto da fachada é obrigatória" });
     if (!aceite) return res.status(400).json({ error: "Confirme a responsabilidade pelas informações enviadas" });
 
     const protocolo = publicProtocol();
@@ -784,38 +814,56 @@ app.post("/api/public-cadastro", async (req, res) => {
       id: `publico-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`,
       protocolo,
       nome,
-      categoria: moduloLabel,
+      categoria: isMusic ? genero : moduloLabel,
       status: "Pendente",
       publicar_guia: "Não",
-      origem_cadastro: "Página pública de cadastro",
+      origem_cadastro: isMusic ? "Página pública de cadastro de artistas musicais" : "Página pública de cadastro",
       data_envio_publico: now,
       responsavel,
       telefone,
       whatsapp: telefone,
+      ...(isMusic ? { resp_telefone: telefone } : {}),
       email: cleanText(body.email, 180),
-      cnpj_cpf: cleanText(body.cnpj_cpf, 80),
-      endereco,
-      maps: cleanUrl(body.maps, 700),
+      cnpj_cpf: isMusic ? "" : cleanText(body.cnpj_cpf, 80),
+      endereco: isMusic ? "" : endereco,
+      maps: isMusic ? "" : cleanUrl(body.maps, 700),
       site: cleanUrl(body.site, 700),
       instagram: cleanUrl(body.instagram, 180),
-      horario: cleanText(body.horario, 260),
-      produtos_servicos: produtosServicos,
+      horario: isMusic ? "" : cleanText(body.horario, 260),
+      produtos_servicos: isMusic ? "" : produtosServicos,
       descricao,
       descritivo: descricao,
       observacoes,
-      autorizacao_publicacao_guia: autorizaGuia,
+      autorizacao_publicacao_guia: isMusic ? "Não" : autorizaGuia,
+      ...(isMusic ? {
+        tipo_artista: tipoArtista,
+        municipio_sede: municipioSede,
+        vinculo_itatinga: "Declarado pelo responsável",
+        integrantes,
+        duracao: cleanText(body.duracao, 80),
+        formato_apresentacao: cleanText(body.formato_apresentacao, 120),
+        repertorio,
+        necessidades_tecnicas: cleanLongText(body.necessidades_tecnicas, 1600),
+        portfolio: cleanUrl(body.portfolio, 700),
+        autorizacao_divulgacao: body.autoriza_divulgacao === true ? "Sim" : "Não",
+        autorizacao_contato: body.autoriza_contato === true ? "Sim" : "Não"
+      } : {}),
       foto: fotoUrl,
       foto_nome: cleanText(foto.name, 260),
       foto_mime: cleanText(foto.mimeType, 80),
       foto_drive_id: cleanText(foto.id, 240),
       foto_view_url: cleanText(foto.viewUrl, 700),
-      foto_storage: cleanText(foto.storage || "local", 60)
+      foto_storage: fotoUrl ? cleanText(foto.storage || "local", 60) : ""
     };
 
     await client.query("BEGIN");
     const { rows } = await client.query("SELECT data FROM inventory WHERE id=1 FOR UPDATE");
     const data = rows[0]?.data && typeof rows[0].data === "object" ? rows[0].data : {};
     if (!Array.isArray(data[modulo])) data[modulo] = [];
+    if (isMusic) {
+      const normalizeName = value => cleanText(value, 180).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      record.possivel_duplicidade = data[modulo].some(item => normalizeName(item.nome) === normalizeName(nome)) ? "Sim" : "Não";
+    }
     data[modulo].push(record);
     const saved = await client.query(`
       INSERT INTO inventory (id, data, updated_at) VALUES (1, $1::jsonb, now())

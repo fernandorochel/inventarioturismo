@@ -346,7 +346,7 @@ const MODULES=[
 {key:"trailers_alimentacao",label:"Trailers de Alimentação",icon:"🚚",grupo:"C – Serviços e Equipamentos",cats:["Churrasco/Espetinho","Lanches/Hambúrguer","Tapioca","Crepe","Pastelaria","Comida Árabe","Açaí/Sorvete","Pizza","Bebidas","Misto","Outros"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome do trailer / ponto","text"],["categoria","Tipo de produto","cat"],["cnpj","CNPJ / CPF","text"],["responsavel","Responsável / Proprietário","text"],["status","Situação do cadastro","sel","status"]]},{t:"Localização e funcionamento",f:[["endereco","Endereço / Ponto fixo","text"],["ponto_referencia","Ponto de referência","text"],["telefone","Telefone","tel"],["email","E-mail","email"],["redes","Site / Rede social","text"],["horario","Horário de atendimento","text"],["dias_funcionamento","Dias de funcionamento","text"]]},{t:"Operação",f:[["capacidade","Capacidade de atendimento","text"],["emp_fixos","Nº de empregados fixos","num"],["emp_temp","Nº de empregados temporários (média anual)","num"],["tem_delivery","Realiza delivery?","sel","simnao"],["tem_estacionamento","Possui estacionamento para clientes?","sel","simnao"]]},{t:"Cardápio",f:[["principais_pratos","Principais produtos / pratos","area"],["especialidades","Especialidades","text"]]},{t:"Observações",f:[["descricao","Observações","area"]]}],sample:[]},
 {key:"vendedores_ambulantes",label:"Vendedores Ambulantes",icon:"🛒",grupo:"C – Serviços e Equipamentos",cats:["Alimentos/Salgados","Doces e guloseimas","Frutas e verduras","Bebidas","Artesanato","Roupas e acessórios","Bijuterias","Flores","Brinquedos","Misto","Outros"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome / Nome fantasia","text"],["categoria","Tipo de produto","cat"],["cpf","CPF","text"],["responsavel","Responsável / Proprietário","text"],["status","Situação do cadastro","sel","status"]]},{t:"Localização e funcionamento",f:[["ponto_atuacao","Ponto de atuação (local onde trabalha)","text"],["bairro","Bairro","text"],["telefone","Telefone","tel"],["email","E-mail","email"],["redes","Site / Rede social","text"],["horario","Horário de atendimento","text"],["dias_funcionamento","Dias de funcionamento","text"]]},{t:"Operação",f:[["alvara","Possui alvará / licença?","sel","simnao"],["num_alvara","Número do alvará","text"],["emp_fixos","Nº de empregados fixos","num"],["emp_temp","Nº de empregados temporários","num"],["tem_delivery","Realiza delivery?","sel","simnao"]]},{t:"Produtos",f:[["principais_produtos","Principais produtos","area"],["especialidades","Especialidades / Diferenciais","text"]]},{t:"Observações",f:[["descricao","Observações","area"]]}],sample:[]},
 {key:"empresas_brinquedos",label:"Empresas de Brinquedos",icon:"🎈",grupo:"C – Serviços e Equipamentos",cats:["Aluguel de brinquedos","Venda de brinquedos","Brinquedos infláveis","Festas e eventos infantis","Outros"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome","text"],["categoria","Tipo","cat"],["responsavel","Responsável","text"],["status","Situação do cadastro","sel","status"]]},{t:"Localização",f:[["endereco","Endereço","text"],["telefone","Telefone","tel"],["email","E-mail","email"],["redes","Redes sociais","text"]]},{t:"Atuação",f:[["descricao","Descrição / serviços","area"]]}],sample:[]},
-{key:"cantores_locais",label:"Cantores Locais",icon:"🎤",grupo:"D – Atrativos Turísticos",cats:["Sertanejo","Gospel","MPB","Rock","Pop","Pagode/Samba","Outros"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome / Nome artístico","text"],["categoria","Gênero musical","cat"],["status","Situação do cadastro","sel","status"]]},{t:"Contato",f:[["telefone","Telefone","tel"],["email","E-mail","email"],["redes","Redes sociais","text"]]},{t:"Sobre",f:[["descricao","Descrição / repertório","area"]]}],sample:[]},
+{key:"cantores_locais",label:"Bandas e Artistas Musicais",icon:"🎤",grupo:"D – Atrativos Turísticos",cats:["Sertanejo","Gospel","MPB","Rock","Pop","Pagode/Samba","Forró","Instrumental","Outros"],listCols:["nome","categoria","tipo_artista","status"],sections:[{t:"Identificação",f:[["nome","Nome / Nome artístico","text"],["tipo_artista","Formação","text"],["municipio_sede","Município de origem ou sede","text"],["categoria","Gênero musical","cat"],["integrantes","Integrantes em palco","num"],["status","Situação do cadastro","sel","status"],["possivel_duplicidade","Possível duplicidade","sel","simnao"]]},{t:"Apresentação",f:[["descricao","Apresentação e trajetória","area"],["repertorio","Repertório principal","area"],["duracao","Duração habitual","text"],["formato_apresentacao","Formato disponível","text"],["necessidades_tecnicas","Necessidades técnicas","area"],["portfolio","Áudio, vídeo ou portfólio","url"]]},{t:"Contato profissional",f:[["instagram","Instagram","text"]]},{t:"Declarações do cadastro",f:[["vinculo_itatinga","Vínculo de origem ou atuação em Itatinga","text"],["autorizacao_divulgacao","Divulgação institucional autorizada","sel","simnao"],["autorizacao_contato","Divulgação do contato autorizada","sel","simnao"]]}],sample:[]},
 {key:"apicultores",label:"Apicultores",icon:"🐝",grupo:"C – Serviços e Equipamentos",cats:["Mel","Própolis","Pólen","Cera","Derivados","Outros"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome / Apiário","text"],["categoria","Produto principal","cat"],["cnpj","CNPJ / CPF","text"],["responsavel","Responsável","text"],["status","Situação do cadastro","sel","status"]]},{t:"Contato",f:[["telefone","Telefone","tel"],["email","E-mail","email"],["redes","Site / Rede social","text"],["maps","Link Google Maps","url"],["horario","Horário de atendimento","text"]]},{t:"Endereço principal de venda",f:[["end_principal","Endereço principal de venda","text"],["end_principal_bairro","Bairro","text"],["end_principal_acess","Endereço principal possui acessibilidade?","sel","simnao"],["end_principal_acess_desc","Descrição da acessibilidade (principal)","area"]]},{t:"Endereço secundário",f:[["end_secundario","Endereço secundário","text"],["end_secundario_bairro","Bairro","text"],["end_secundario_acess","Endereço secundário possui acessibilidade?","sel","simnao"],["end_secundario_acess_desc","Descrição da acessibilidade (secundário)","area"]]},{t:"Inspeção sanitária",f:[["selo_inspecao","Possui selo de inspeção?","sel","simnao"],["selo_numero","Número do selo de inspeção","text"]]},{t:"Produção",f:[["producao","Produção / capacidade","text"],["descricao","Observações","area"]]}],sample:[]},
 {key:"agencias",label:"Agências de Viagens e Receptivo",icon:"🧳",grupo:"C – Serviços e Equipamentos",cats:["Receptivo","Emissivo","Mista"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome da agência","text"],["categoria","Tipo de atuação","cat"],["responsavel","Responsável","text"],["status","Situação do cadastro","sel","status"],["realiza_receptivo","Realiza receptivo?","sel","simnao"]]},{t:"Localização",f:[["endereco","Endereço","text"],["bairro","Bairro","text"],["municipio_uf","Município e Estado","text"],["cep","CEP","text"],["telefones","Telefones","text"],["site","Site","url"],["email","E-mail","email"]]},{t:"Equipe e produtos",f:[["emp_fixos","Nº de empregados fixos","num"],["emp_temp","Nº de empregados temporários (média anual)","num"],["cadastur","Possui CADASTUR?","sel","simnao"],["produtos_prontos","Possui produtos prontos (city tour/roteiros)?","sel","simnao"],["produtos_desc","Quais produtos prontos existem","area"]]}],sample:[]},
 {key:"turismo_rural",label:"Turismo Rural",icon:"🚜",grupo:"E – Segmentação",cats:["Hotel fazenda","Propriedade rural com pernoite","Propriedade rural para visitação"],listCols:["nome","categoria","status"],sections:[{t:"Identificação",f:[["nome","Nome da propriedade","text"],["categoria","Tipologia","cat"],["responsavel","Responsável","text"],["status","Situação do cadastro","sel","status"]]},{t:"Localização",f:[["endereco","Endereço","text"],["site","Site","url"],["email","E-mail","email"],["telefone","Telefone","tel"],["emp_fixos","Nº de empregados fixos","num"],["emp_temp","Nº de empregados temporários (média anual)","num"]]},{t:"Atividades oferecidas",f:[["agro","Possui atividades agropecuárias?","sel","simnao"],["agro_q","Quais","text"],["transf","Possui atividades de transformação (queijo, doces, bebidas)?","sel","simnao"],["transf_q","Quais","text"],["eco","Possui atividades ecoturísticas/trilhas/observação de aves?","sel","simnao"],["eco_q","Quais","text"],["avent","Possui atividades de aventura?","sel","simnao"],["avent_q","Quais","text"],["interat","Possui atividades interativas (rebanho, ordenha, cavalgada, carroça)?","sel","simnao"],["interat_q","Quais","text"],["pescar","Possui atividades de pesca?","sel","simnao"],["pescar_q","Quais","text"],["esport","Possui atividades esportivas?","sel","simnao"],["esport_q","Quais","text"],["pedag","Possui atividades pedagógicas?","sel","simnao"],["pedag_q","Quais","text"],["cultr","Possui atividades culturais (dança, artesanato, folclore, viola, folia de reis)?","sel","simnao"],["cultr_q","Quais","text"],["edif","Possui edificação histórica?","sel","simnao"],["edif_q","Quais","text"]]}],sample:[]},
@@ -432,12 +432,12 @@ function labelOf(m,name){const f=allFields(m).find(x=>x[0]===name);return f?f[1]
 
 MODULES.forEach(m=>{
   if(m.noExtras)return;
-  if(!allFields(m).some(f=>f[0]==="maps")){
+  if(m.key!=="cantores_locais"&&!allFields(m).some(f=>f[0]==="maps")){
     let loc=m.sections.find(se=>se.t.toLowerCase().indexOf("localiza")>=0);
     if(!loc){loc={t:"Localização",f:[]};m.sections.push(loc);}
     loc.f.push(["maps","Link Google Maps","url"]);
   }
-  if(!allFields(m).some(f=>f[0].includes("acess"))) m.sections.push({t:"Acessibilidade",f:[["acessivel","Possui acessibilidade?","sel","simnao"],["acessivel_desc","Descrição do nível de acessibilidade","area"]]});
+  if(m.key!=="cantores_locais"&&!allFields(m).some(f=>f[0].includes("acess"))) m.sections.push({t:"Acessibilidade",f:[["acessivel","Possui acessibilidade?","sel","simnao"],["acessivel_desc","Descrição do nível de acessibilidade","area"]]});
   if(!allFields(m).some(f=>f[0]==="foto")) m.sections.push({t:"Imagem",f:[["foto","Foto","photo"]]});
 });
 // ---- upload/preview de arquivo no armazenamento do sistema ----
@@ -791,11 +791,11 @@ function renderAprovacaoCadastros(){
     h+=`<div class="tablewrap"><table><thead><tr><th>Módulo</th><th>Cadastro</th><th>Categoria</th><th>Status</th><th>Guia</th><th>Foto</th><th style="text-align:right">Ações</th></tr></thead><tbody>`;
     todos.forEach(r=>{
       h+=`<tr class="row" onclick="openDetail('${r.key}','${r.id}')">
-        <td>${r.icon} ${r.mod}</td>
-        <td><b>${r.nome}</b>${r.responsavel?`<br><span style="font-size:11.5px;color:var(--cinza-claro)">Responsável: ${r.responsavel}</span>`:""}${r.telefone?`<br><span style="font-size:11.5px;color:var(--cinza-claro)">Telefone: ${r.telefone}</span>`:""}</td>
-        <td><span class="tag">${r.categoria}</span></td>
-        <td><span class="pill ${pillClass(r.status)}">${r.status}</span></td>
-        <td>${r.publicar}</td>
+        <td>${r.icon} ${_esc(r.mod)}</td>
+        <td><b>${_esc(r.nome)}</b>${r.responsavel?`<br><span style="font-size:11.5px;color:var(--cinza-claro)">Responsável: ${_esc(r.responsavel)}</span>`:""}${r.telefone?`<br><span style="font-size:11.5px;color:var(--cinza-claro)">Telefone: ${_esc(r.telefone)}</span>`:""}</td>
+        <td><span class="tag">${_esc(r.categoria)}</span></td>
+        <td><span class="pill ${pillClass(r.status)}">${_esc(r.status)}</span></td>
+        <td>${_esc(r.publicar)}</td>
         <td>${r.foto?"Com foto":"Sem foto"}</td>
         <td onclick="event.stopPropagation()"><div class="rowact">
           <button class="iconbtn" onclick="openDetail('${r.key}','${r.id}')">Ver</button>
@@ -1209,9 +1209,9 @@ function donut(data){const total=data.reduce((s,d)=>s+d[1],0)||1;
 let filterState={};
 function pillClass(s){return s==="Ativo"?"ok":s==="Pendente"?"warn":s==="Em revisão"?"rev":"off";}
 function cellValue(m,r,col){const v=r[col];
-  if(col==="categoria")return `<span class="tag">${v||"—"}</span>`;
-  if(col==="status")return `<span class="pill ${pillClass(v)}">${v||"—"}</span>`;
-  return v?String(v):"—";}
+  if(col==="categoria")return `<span class="tag">${_esc(v||"—")}</span>`;
+  if(col==="status")return `<span class="pill ${pillClass(v)}">${_esc(v||"—")}</span>`;
+  return v?_esc(v):"—";}
 const DEMANDA_EXPORT_COLS=[
   ["codigo_pesquisa","Código"],["arquivo_origem","Arquivo fonte"],["evento_local_coleta","Evento/local da coleta"],["data_coleta","Data"],["aplicador","Aplicador(a)"],["forma_aplicacao","Forma de aplicação"],
   ["idade","Q1 - Idade"],["genero","Q2 - Gênero"],["cor_raca","Q3 - Cor/raça"],["escolaridade","Q4 - Escolaridade"],["ocupacao","Q5 - Ocupação principal"],["renda_familiar","Q6 - Renda familiar mensal"],
@@ -1293,20 +1293,23 @@ function openDetail(key,id){
       let v=r[fn];
       if(t==="photo"){const media=firstMediaInfo(r);v=media?fotoImg(media.src,240,180,media.nome,media.mime):"—";}
       else if(!v){v="—";}
-      else if(fn==="maps"){v=`<a href="${r[fn]}" target="_blank" style="word-break:break-all">${r[fn]}</a> <a href="${r[fn]}" target="_blank" style="white-space:nowrap">📍 Abrir no Google Maps ↗</a>`;}
-      else if(t==="url"){v=`<a href="${r[fn]}" target="_blank">${r[fn]} ↗</a>`;}
+      else if(fn==="maps" || t==="url"){
+        const href=/^https?:\/\//i.test(String(v))?String(v):"";
+        v=href?`<a href="${_esc(href)}" target="_blank" rel="noopener noreferrer">${_esc(v)} ↗</a>`:_esc(v);
+      }
+      else{v=_esc(v);}
       body+=`<div class="det-row"><div class="k">${fl}</div><div class="v">${v}</div></div>`;
     });
   });
-  modal(`${m.icon} ${r.nome||"Registro"}`,body,
+  modal(`${m.icon} ${_esc(r.nome||"Registro")}`,body,
     `${canEdit()?`<button class="btn-sec btn-sm" onclick="closeModal();openForm('${key}','${id}')">Editar</button>`:""}
      <button class="btn btn-sm" onclick="closeModal()">Fechar</button>`);
 }
 
 /* ===== form (por seções) ===== */
 function fieldInput(m,fn,fl,t,optKey,val){
-  if(fn==="publicar_guia"&&(val===undefined||val===null||val==="")){val=(m&&["demanda_turistica","atas_comtur"].includes(m.key))?"Não":"Sim";}
-  const v=val?String(val).replace(/"/g,"&quot;"):"";
+  if(fn==="publicar_guia"&&(val===undefined||val===null||val==="")){val=(m&&["demanda_turistica","atas_comtur","cantores_locais"].includes(m.key))?"Não":"Sim";}
+  const v=val?_esc(val):"";
   if(t==="photo"){const cur=val?fotoImg(val,160,120,(window._formArquivo&&window._formArquivo.nome)||"",window._formArquivo&&window._formArquivo.mime):'<div class="photo-box" id="fotoPrevEmpty">Nenhum arquivo anexado</div>';
     return `<div class="field full"><label>${fl}</label><div id="fotoPrev">${cur}</div><input type="file" accept="image/*,.pdf,application/pdf" onchange="onFotoPick(event)" style="font-size:12.5px"> <button type="button" class="iconbtn" onclick="clearFoto()">Remover</button></div>`;}
   let input;

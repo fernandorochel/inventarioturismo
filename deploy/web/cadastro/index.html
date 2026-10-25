@@ -368,6 +368,19 @@
       text-align:center;
       font-size:.9rem;
     }
+    .music-callout{
+      grid-column:1/-1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:18px 24px;
+      border:1px solid rgba(11,99,182,.22);
+      border-radius:var(--radius-card);
+      background:#f4f9ff;
+    }
+    .music-callout p{margin:4px 0 0;color:var(--texto-secundario)}
+    .music-callout a{display:inline-block;flex:0 0 auto;padding:11px 16px;border-radius:9px;background:var(--azul-principal);color:#fff;font-weight:800;text-decoration:none}
     @media (max-width:900px){
       .intro{grid-template-columns:1fr}
       .intro-visual{min-height:220px}
@@ -375,6 +388,7 @@
       .side{position:static}
     }
     @media (max-width:640px){
+      .music-callout{align-items:stretch;flex-direction:column}
       .topbar{align-items:flex-start;flex-direction:column}
       .brand{align-items:flex-start;flex-direction:column;gap:6px}
       .brand-logo{width:min(260px,100%)}
@@ -418,6 +432,11 @@
         <div class="visual-card">Envio público com foto obrigatória da fachada e revisão institucional antes da publicação.</div>
       </div>
     </section>
+
+    <aside class="music-callout" aria-label="Cadastro de bandas e artistas">
+      <div><strong>Cadastro de bandas e artistas musicais</strong><p>Inscreva seu grupo ou projeto musical no Inventário Municipal.</p></div>
+      <a href="/cadastro/bandas/">Abrir formulário musical</a>
+    </aside>
 
     <section class="panel" aria-label="Formulário de cadastro">
       <h2 class="section-title">Dados para cadastro</h2>
