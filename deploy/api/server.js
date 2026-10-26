@@ -780,6 +780,7 @@ app.post("/api/public-cadastro", async (req, res) => {
     const genero = cleanText(body.genero_musical, 80);
     const tipoArtista = cleanText(body.tipo_artista, 60);
     const municipioSede = cleanText(body.municipio_sede, 120);
+    const cnpj = cleanText(body.cnpj_cpf, 80).toUpperCase().replace(/[.\/\-\s]/g, "");
     const integrantes = Number(body.integrantes);
     const repertorio = cleanLongText(body.repertorio, 1600);
 
@@ -789,9 +790,11 @@ app.post("/api/public-cadastro", async (req, res) => {
     if (isMusic && !["Artista solo", "Dupla", "Banda", "Grupo musical", "Outro"].includes(tipoArtista))
       return res.status(400).json({ error: "Escolha uma formação válida" });
     if (isMusic && !municipioSede) return res.status(400).json({ error: "Informe o município de origem ou sede" });
+    if (isMusic && !/^[A-Z0-9]{12}[0-9]{2}$/.test(cnpj))
+      return res.status(400).json({ error: "Informe um CNPJ com 14 caracteres; os dois últimos devem ser números" });
     if (isMusic && body.vinculo_itatinga !== true)
       return res.status(400).json({ error: "Confirme o vínculo de origem ou atuação em Itatinga" });
-    if (isMusic && !["Sertanejo", "Gospel", "MPB", "Rock", "Pop", "Pagode/Samba", "Forró", "Instrumental", "Outros"].includes(genero))
+    if (isMusic && !["Sertanejo", "Gospel", "MPB", "Rock", "Pop", "Pagode/Samba", "Forró", "Instrumental", "DJ", "Outros"].includes(genero))
       return res.status(400).json({ error: "Escolha um gênero musical válido" });
     if (isMusic && (!Number.isInteger(integrantes) || integrantes < 1 || integrantes > 100))
       return res.status(400).json({ error: "Informe a quantidade de integrantes em palco" });
@@ -826,7 +829,7 @@ app.post("/api/public-cadastro", async (req, res) => {
       whatsapp: telefone,
       ...(isMusic ? { resp_telefone: telefone } : {}),
       email: cleanText(body.email, 180),
-      cnpj_cpf: isMusic ? "" : cleanText(body.cnpj_cpf, 80),
+      cnpj_cpf: isMusic ? cnpj : cleanText(body.cnpj_cpf, 80),
       endereco: isMusic ? "" : endereco,
       maps: isMusic ? "" : cleanUrl(body.maps, 700),
       site: cleanUrl(body.site, 700),
