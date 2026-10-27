@@ -4,7 +4,7 @@ COPY api/package.json .
 RUN npm install --production
 ARG APP_BUILD_VERSION=dev
 ENV APP_BUILD_VERSION=$APP_BUILD_VERSION
-COPY api/server.js api/report-exporter.js api/local-performances.js ./
+COPY api/server.js api/report-exporter.js api/local-performances.js api/register-initial-performance-events.js ./
 COPY web /app/web
 EXPOSE 80
 CMD ["node", "server.js"]

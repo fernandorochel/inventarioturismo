@@ -1312,6 +1312,7 @@ function openDetail(key,id){
   });
   modal(`${m.icon} ${_esc(r.nome||"Registro")}`,body,
     `<button class="btn-sec btn-sm" onclick="gerarFichaPdf('${key}','${id}')">📄 Imprimir PDF</button>
+     ${key==="eventos"?`<button class="btn-sec btn-sm" onclick="closeModal();lpOpenFromInventory('${id}')">🎤 Controle de apresentações</button>`:""}
      ${canEdit()?`<button class="btn-sec btn-sm" onclick="closeModal();openForm('${key}','${id}')">Editar</button>`:""}
      ${canEdit()&&currentView==="aprovacao"&&(r.status==="Pendente"||r.status==="Em revisão")?`<button class="btn-sec btn-sm" style="color:var(--vermelho);border-color:#fecaca" onclick="denyRecord('${key}','${id}')">Negar cadastro</button>`:""}
      <button class="btn btn-sm" onclick="closeModal()">Fechar</button>`);
@@ -1319,7 +1320,7 @@ function openDetail(key,id){
 
 /* ===== form (por seções) ===== */
 function fieldInput(m,fn,fl,t,optKey,val){
-  if(fn==="publicar_guia"&&(val===undefined||val===null||val==="")){val=(m&&["demanda_turistica","atas_comtur","cantores_locais"].includes(m.key))?"Não":"Sim";}
+  if(fn==="publicar_guia"&&(val===undefined||val===null||val==="")){val=(m&&["demanda_turistica","atas_comtur","cantores_locais","eventos"].includes(m.key))?"Não":"Sim";}
   const v=val?_esc(val):"";
   if(t==="photo"){const cur=val?fotoImg(val,160,120,(window._formArquivo&&window._formArquivo.nome)||"",window._formArquivo&&window._formArquivo.mime):'<div class="photo-box" id="fotoPrevEmpty">Nenhum arquivo anexado</div>';
     return `<div class="field full"><label>${fl}</label><div id="fotoPrev">${cur}</div><input type="file" accept="image/*,.pdf,application/pdf" onchange="onFotoPick(event)" style="font-size:12.5px"> <button type="button" class="iconbtn" onclick="clearFoto()">Remover</button></div>`;}

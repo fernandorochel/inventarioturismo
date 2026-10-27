@@ -35,7 +35,23 @@ function activeMusicArtists(inventory) {
   }));
 }
 
-function normalizedPlan(input, previous, artists) {
+function inventoryTourismEvents(inventory) {
+  const records = Array.isArray(inventory?.eventos) ? inventory.eventos : [];
+  const seen = new Set();
+  return records.filter(record => {
+    const id = String(record?.id ?? "");
+    if (!ID_PATTERN.test(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  }).map(record => ({
+    id: String(record.id),
+    name: shortText(record.nome, 180) || "Evento sem nome",
+    category: shortText(record.categoria, 80),
+    status: shortText(record.status, 40)
+  }));
+}
+
+function normalizedPlan(input, previous, artists, inventoryEvents = []) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw inputError("Dados do controle de apresentações inválidos.");
   }
@@ -47,6 +63,7 @@ function normalizedPlan(input, previous, artists) {
   }
 
   const artistById = new Map(artists.map(artist => [artist.id, artist]));
+  const inventoryEventIds = new Set(inventoryEvents.map(event => event.id));
   const oldSlots = new Map();
   for (const event of previous?.events || []) {
     for (const slot of event.slots || []) oldSlots.set(slot.id, slot);
@@ -60,8 +77,14 @@ function normalizedPlan(input, previous, artists) {
     const id = String(event?.id ?? "");
     const name = shortText(event?.name, 180);
     const date = String(event?.date ?? "");
+    const inventoryEventId = String(event?.inventoryEventId ?? "");
+    const oldEvent = (previous?.events || []).find(item => item.id === id);
     if (!ID_PATTERN.test(id) || eventIds.has(id) || !name || (date && !validDate(date))) {
       throw inputError("Identificação, nome ou data de evento inválidos.");
+    }
+    if (inventoryEventId && (!ID_PATTERN.test(inventoryEventId) ||
+        (!inventoryEventIds.has(inventoryEventId) && oldEvent?.inventoryEventId !== inventoryEventId))) {
+      throw inputError("Selecione um evento existente no Inventário Municipal.");
     }
     eventIds.add(id);
     if (!Array.isArray(event.slots) || event.slots.length > 80) {
@@ -101,6 +124,7 @@ function normalizedPlan(input, previous, artists) {
     return {
       id,
       name,
+      inventoryEventId,
       date,
       location: shortText(event.location, 180),
       notes: shortText(event.notes, 1200),
@@ -138,4 +162,4 @@ function normalizedPlan(input, previous, artists) {
   return { queues, events };
 }
 
-module.exports = { activeMusicArtists, normalizedPlan };
+module.exports = { activeMusicArtists, inventoryTourismEvents, normalizedPlan };

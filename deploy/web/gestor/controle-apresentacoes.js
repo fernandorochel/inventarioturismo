@@ -1,5 +1,5 @@
-/* Controle operacional independente do Inventário Municipal. */
-const LP = { data: { queues: {}, events: [] }, version: "", artists: [], tab: "fila", genre: "", historyGenre: "Todos", eventId: "", form: null, busy: false };
+/* Controle operacional separado, com vínculos às fichas do Inventário Municipal. */
+const LP = { data: { queues: {}, events: [] }, version: "", artists: [], inventoryEvents: [], tab: "fila", genre: "", historyGenre: "Todos", eventId: "", requestedInventoryEventId: "", form: null, busy: false };
 const LP_STATUSES = ["Planejado", "Convidado", "Confirmado", "Realizado", "Cancelado"];
 
 function lpEsc(value) {
@@ -10,6 +10,12 @@ function lpDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value.
 function lpGenres() { return [...new Set(LP.artists.map(a => a.genre))].sort((a, b) => a.localeCompare(b, "pt-BR")); }
 function lpArtist(id) { return LP.artists.find(a => a.id === id); }
 function lpEvent(id) { return LP.data.events.find(e => e.id === id); }
+function lpInventoryEvent(id) { return LP.inventoryEvents.find(e => e.id === id); }
+function lpOpenFromInventory(id) {
+  LP.requestedInventoryEventId = id;
+  LP.tab = "eventos";
+  go("apresentacoes_locais");
+}
 function lpQueue(genre) {
   const artists = LP.artists.filter(a => a.genre === genre);
   const byId = new Map(artists.map(a => [a.id, a]));
@@ -45,7 +51,17 @@ async function renderLocalPerformances() {
     if (!Array.isArray(LP.data.events)) LP.data.events = [];
     LP.version = json.version || "";
     LP.artists = json.artists || [];
-    if (currentView === "apresentacoes_locais") lpRender();
+    LP.inventoryEvents = json.inventoryEvents || [];
+    if (LP.requestedInventoryEventId) {
+      const id = LP.requestedInventoryEventId;
+      LP.requestedInventoryEventId = "";
+      LP.eventId = LP.data.events.find(event => event.inventoryEventId === id)?.id || "";
+      const hasPlan = Boolean(LP.eventId);
+      if (currentView === "apresentacoes_locais") {
+        lpRender();
+        if (!hasPlan && canEdit()) lpOpenEventForm("", id);
+      }
+    } else if (currentView === "apresentacoes_locais") lpRender();
   } catch (error) {
     if (currentView === "apresentacoes_locais") {
       document.getElementById("main").innerHTML = `<div class="crumb">Gestão interna › Apresentações locais</div><div class="page-head"><div><h2>🎤 Controle de Apresentações Locais</h2></div></div><div class="lp-note">${lpEsc(error.message)}</div><button class="btn btn-sm" data-lp-action="reload">Tentar novamente</button>`;
@@ -62,7 +78,7 @@ function lpRender() {
   const main = document.getElementById("main");
   main.innerHTML = `<div class="crumb">Gestão interna › Apresentações locais</div>
     <div class="page-head"><div><h2>🎤 Controle de Apresentações Locais</h2><p>Planejamento e acompanhamento de artistas do município</p></div></div>
-    <div class="lp-note">Esta é uma ferramenta de <b>gestão interna</b>, separada do Inventário Municipal. Ela consulta apenas artistas musicais com cadastro <b>Ativo</b> no Inventário e usa o gênero informado na ficha. Incluir um artista na programação não representa contratação.</div>
+    <div class="lp-note">Esta é uma ferramenta de <b>gestão interna</b>. Ela vincula eventos e consulta artistas musicais com cadastro <b>Ativo</b> no Inventário. Incluir um artista na programação não representa contratação nem confirma sua apresentação.</div>
     <div class="lp-stats"><div class="lp-stat"><strong>${LP.artists.length}</strong><span>artistas aprovados disponíveis</span></div><div class="lp-stat"><strong>${scheduled}</strong><span>apresentações em planejamento</span></div><div class="lp-stat"><strong>${completed}</strong><span>apresentações realizadas registradas</span></div></div>
     <div class="lp-tabs" role="tablist" aria-label="Controle de apresentações">${tabs.map(([id, label]) => `<button type="button" role="tab" aria-selected="${LP.tab === id}" class="lp-tab ${LP.tab === id ? "active" : ""}" data-lp-action="tab" data-tab="${id}">${label}</button>`).join("")}</div>
     ${LP.tab === "fila" ? lpRenderQueue(genres) : LP.tab === "eventos" ? lpRenderEvents() : lpRenderHistory(genres)}`;
@@ -79,16 +95,17 @@ function lpRenderQueue(genres) {
 }
 
 function lpRenderEvents() {
-  const events = [...LP.data.events].sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name, "pt-BR"));
+  const events = [...LP.data.events];
   if (!events.some(e => e.id === LP.eventId)) LP.eventId = events[0]?.id || "";
   const selected = lpEvent(LP.eventId);
-  return `<div class="lp-toolbar"><div class="lp-muted">Crie cada edição de evento com data própria e monte a ordem das apresentações.</div>${canEdit() ? `<button class="btn btn-sm" data-lp-action="new-event">+ Novo evento</button>` : ""}</div>
+  return `<div class="lp-toolbar"><div class="lp-muted">Selecione um evento do Inventário, informe a data quando definida e monte a ordem das apresentações.</div>${canEdit() ? `<button class="btn btn-sm" data-lp-action="new-event">+ Novo evento</button>` : ""}</div>
     ${events.length ? `<div class="lp-events"><div class="lp-event-list">${events.map(e => `<button type="button" class="lp-event-item ${e.id === LP.eventId ? "active" : ""}" data-lp-action="select-event" data-event-id="${lpEsc(e.id)}"><strong>${lpEsc(e.name)}</strong><span>${lpDate(e.date)} · ${(e.slots || []).length} apresentação(ões)</span></button>`).join("")}</div><div class="lp-event-detail">${lpRenderEventDetail(selected)}</div></div>` : `<div class="lp-panel"><div class="lp-empty">Nenhum evento no controle. Use “Novo evento” para começar a programação.</div></div>`}`;
 }
 
 function lpRenderEventDetail(event) {
   if (!event) return "";
-  return `<div class="lp-panel"><div class="lp-panel-head"><div><h3>${lpEsc(event.name)}</h3><div class="lp-event-meta"><span>📅 ${lpDate(event.date)}</span>${event.location ? `<span>📍 ${lpEsc(event.location)}</span>` : ""}</div></div>${canEdit() ? `<div class="lp-actions">${lpButton("edit-event", "Editar evento", `data-event-id="${lpEsc(event.id)}"`)}${!event.slots.length ? lpButton("delete-event", "Excluir", `data-event-id="${lpEsc(event.id)}"`, "danger") : ""}</div>` : ""}</div>
+  const source = lpInventoryEvent(event.inventoryEventId);
+  return `<div class="lp-panel"><div class="lp-panel-head"><div><h3>${lpEsc(event.name)}</h3><div class="lp-event-meta"><span>📅 ${lpDate(event.date)}</span>${event.location ? `<span>📍 ${lpEsc(event.location)}</span>` : ""}${event.inventoryEventId ? `<span>📚 Inventário: ${lpEsc(source?.name || "Ficha não localizada")}${source?.category ? ` · ${lpEsc(source.category)}` : ""}</span>` : `<span>Sem vínculo com o Inventário</span>`}</div></div><div class="lp-actions">${source ? lpButton("open-inventory-event", "Ver ficha", `data-inventory-event-id="${lpEsc(source.id)}"`) : ""}${canEdit() ? `${lpButton("edit-event", "Editar evento", `data-event-id="${lpEsc(event.id)}"`)}${!event.slots.length ? lpButton("delete-event", "Remover do controle", `data-event-id="${lpEsc(event.id)}"`, "danger") : ""}` : ""}</div></div>
     ${event.notes ? `<div class="lp-event-note">${lpEsc(event.notes)}</div>` : ""}
     <div class="lp-panel-head"><div><h3>Sequência de apresentações</h3><p>${event.slots.length} item(ns) na programação</p></div>${canEdit() && LP.artists.length ? `<button class="btn btn-sm" data-lp-action="new-slot" data-event-id="${lpEsc(event.id)}">+ Adicionar apresentação</button>` : ""}</div>
     ${event.slots.length ? `<div class="lp-tablewrap"><table class="lp-table"><thead><tr><th>Ordem</th><th>Horário</th><th>Artista</th><th>Gênero</th><th>Situação</th>${canEdit() ? "<th>Ações</th>" : ""}</tr></thead><tbody>${event.slots.map((slot, index) => `<tr><td><strong>${index + 1}º</strong></td><td>${lpEsc(slot.time || "—")}${slot.duration ? `<div class="lp-muted">${slot.duration} min</div>` : ""}</td><td><strong>${lpEsc(slot.artistName)}</strong>${slot.notes ? `<div class="lp-muted">${lpEsc(slot.notes)}</div>` : ""}</td><td>${lpEsc(slot.genre)}</td><td><span class="lp-status ${lpEsc(slot.status.toLowerCase())}">${lpEsc(slot.status)}</span></td>${canEdit() ? `<td><span class="lp-actions">${lpButton("slot-up", "↑", `data-event-id="${lpEsc(event.id)}" data-slot-id="${lpEsc(slot.id)}" aria-label="Subir apresentação" ${index === 0 ? "disabled" : ""}`)}${lpButton("slot-down", "↓", `data-event-id="${lpEsc(event.id)}" data-slot-id="${lpEsc(slot.id)}" aria-label="Descer apresentação" ${index === event.slots.length - 1 ? "disabled" : ""}`)}${lpButton("edit-slot", "Editar", `data-event-id="${lpEsc(event.id)}" data-slot-id="${lpEsc(slot.id)}"`)}${slot.status !== "Realizado" ? lpButton("delete-slot", "Remover", `data-event-id="${lpEsc(event.id)}" data-slot-id="${lpEsc(slot.id)}"`, "danger") : ""}</span></td>` : ""}</tr>`).join("")}</tbody></table></div>` : `<div class="lp-empty">Ainda não há apresentações neste evento. Selecione artistas aprovados para montar a sequência.</div>`}</div>`;
@@ -116,6 +133,7 @@ async function lpSave(next, auditName) {
     LP.data = json.data;
     LP.version = json.version;
     LP.artists = json.artists || LP.artists;
+    LP.inventoryEvents = json.inventoryEvents || LP.inventoryEvents;
     closeModal(true);
     lpRender();
     toast("Controle salvo.");
@@ -128,11 +146,13 @@ async function lpSave(next, auditName) {
   }
 }
 
-function lpOpenEventForm(eventId) {
+function lpOpenEventForm(eventId, selectedInventoryEventId = "") {
   if (!canEdit()) return;
   const event = lpEvent(eventId);
+  const inventoryEventId = event?.inventoryEventId || selectedInventoryEventId;
+  const selected = lpInventoryEvent(inventoryEventId);
   LP.form = { type: "event", eventId: eventId || "" };
-  modal(event ? "Editar evento" : "Novo evento", `<div class="lp-form"><label class="wide">Nome do evento<input id="lpEventName" maxlength="180" value="${lpEsc(event?.name || "")}" required></label><label>Data da edição (se definida)<input id="lpEventDate" type="date" value="${lpEsc(event?.date || "")}"></label><label>Local<input id="lpEventLocation" maxlength="180" value="${lpEsc(event?.location || "")}"></label><label class="wide">Observações internas<textarea id="lpEventNotes" maxlength="1200">${lpEsc(event?.notes || "")}</textarea></label></div>`, `<button class="btn btn-sm" data-lp-action="save-event">Salvar evento</button>`);
+  modal(event ? "Editar evento" : "Novo evento", `<div class="lp-form"><label class="wide">Evento do Inventário Municipal<select id="lpInventoryEvent" data-lp-change="inventory-event"><option value="">Sem vínculo</option>${LP.inventoryEvents.map(item => `<option value="${lpEsc(item.id)}" ${item.id === inventoryEventId ? "selected" : ""}>${lpEsc(item.name)}${item.category ? ` · ${lpEsc(item.category)}` : ""}</option>`).join("")}</select></label><label class="wide">Nome desta programação<input id="lpEventName" maxlength="180" value="${lpEsc(event?.name || selected?.name || "")}" required></label><label>Data da edição (se definida)<input id="lpEventDate" type="date" value="${lpEsc(event?.date || "")}"></label><label>Local<input id="lpEventLocation" maxlength="180" value="${lpEsc(event?.location || "")}"></label><label class="wide">Observações internas<textarea id="lpEventNotes" maxlength="1200">${lpEsc(event?.notes || "")}</textarea></label></div>`, `<button class="btn btn-sm" data-lp-action="save-event">Salvar evento</button>`);
   document.getElementById("lpEventName")?.focus();
 }
 async function lpSaveEvent() {
@@ -144,6 +164,7 @@ async function lpSaveEvent() {
   const existing = next.events.find(e => e.id === LP.form.eventId);
   const event = existing || { id: "evt-" + crypto.randomUUID(), slots: [] };
   event.name = name;
+  event.inventoryEventId = document.getElementById("lpInventoryEvent").value;
   event.date = date;
   event.location = document.getElementById("lpEventLocation").value.trim();
   event.notes = document.getElementById("lpEventNotes").value.trim();
@@ -221,7 +242,7 @@ async function lpDeleteEvent(eventId) {
   const next = lpCopy();
   const event = next.events.find(e => e.id === eventId);
   if (!event || event.slots.length) return;
-  if (!window.confirm(`Excluir o evento vazio “${event.name}”?`)) return;
+  if (!window.confirm(`Remover “${event.name}” deste controle? A ficha no Inventário permanecerá.`)) return;
   next.events = next.events.filter(e => e.id !== eventId);
   LP.eventId = "";
   await lpSave(next, `Evento vazio excluído: ${event.name}`);
@@ -236,6 +257,7 @@ document.addEventListener("click", async event => {
   if (action === "reload") return renderLocalPerformances();
   if (action === "tab") { LP.tab = button.dataset.tab; lpRender(); return; }
   if (action === "select-event") { LP.eventId = eventId; lpRender(); return; }
+  if (action === "open-inventory-event") { go("eventos"); openDetail("eventos", button.dataset.inventoryEventId); return; }
   if (!canEdit()) return;
   if (action === "new-event") return lpOpenEventForm("");
   if (action === "edit-event") return lpOpenEventForm(eventId);
@@ -251,6 +273,11 @@ document.addEventListener("change", event => {
   const type = event.target.dataset.lpChange;
   if (type === "genre") { LP.genre = event.target.value; lpRender(); }
   if (type === "history-genre") { LP.historyGenre = event.target.value; lpRender(); }
+  if (type === "inventory-event" && LP.form?.type === "event" && !LP.form.eventId) {
+    const name = document.getElementById("lpEventName");
+    const selected = lpInventoryEvent(event.target.value);
+    if (name && selected) name.value = selected.name;
+  }
   if (type === "slot-genre") {
     const artistSelect = document.getElementById("lpSlotArtist");
     if (artistSelect) artistSelect.innerHTML = lpArtistOptions(event.target.value);

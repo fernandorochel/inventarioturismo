@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { activeMusicArtists, normalizedPlan } = require("./local-performances");
+const { activeMusicArtists, inventoryTourismEvents, normalizedPlan } = require("./local-performances");
 
 const inventory = {
   cantores_locais: [
@@ -60,4 +60,14 @@ test("permite planejar sem data, mas exige data para registrar realização", ()
   assert.equal(normalizedPlan(draft, { events: [] }, artists).events[0].date, "");
   draft.events[0].slots.push({ id: "apr-sem-data", artistId: "a1", status: "Realizado" });
   assert.throws(() => normalizedPlan(draft, { events: [] }, artists), /data do evento/);
+});
+
+test("vincula uma programação somente a uma ficha de evento existente", () => {
+  const catalog = inventoryTourismEvents({ eventos: [
+    { id: "eventos-1", nome: "Fórum Municipal", categoria: "Temático", status: "Ativo" }
+  ] });
+  const draft = { queues: {}, events: [{ id: "evt-1", inventoryEventId: "eventos-1", name: "Fórum Municipal", date: "", slots: [] }] };
+  assert.equal(normalizedPlan(draft, { events: [] }, artists, catalog).events[0].inventoryEventId, "eventos-1");
+  draft.events[0].inventoryEventId = "eventos-inexistente";
+  assert.throws(() => normalizedPlan(draft, { events: [] }, artists, catalog), /evento existente/);
 });

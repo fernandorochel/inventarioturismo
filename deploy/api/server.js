@@ -18,7 +18,7 @@ const {
   buildReportXlsx,
   normalizeReportPayload
 } = require("./report-exporter");
-const { activeMusicArtists, normalizedPlan } = require("./local-performances");
+const { activeMusicArtists, inventoryTourismEvents, normalizedPlan } = require("./local-performances");
 let sharp = null;
 try {
   sharp = require("sharp");
@@ -666,7 +666,8 @@ app.get("/api/local-performances", requireAuth, async (req, res) => {
     res.json({
       data: control.rows[0]?.data || { queues: {}, events: [] },
       version: control.rows[0]?.version || "",
-      artists: activeMusicArtists(inventory.rows[0]?.data || {})
+      artists: activeMusicArtists(inventory.rows[0]?.data || {}),
+      inventoryEvents: inventoryTourismEvents(inventory.rows[0]?.data || {})
     });
   } catch (error) {
     console.error("Erro ao carregar controle de apresentações:", error);
@@ -691,7 +692,8 @@ app.post("/api/local-performances", requireAuth, requireEditor, async (req, res)
     }
     const inventory = await client.query("SELECT data FROM inventory WHERE id=1");
     const artists = activeMusicArtists(inventory.rows[0]?.data || {});
-    const normalized = normalizedPlan(data, control.rows[0].data, artists);
+    const inventoryEvents = inventoryTourismEvents(inventory.rows[0]?.data || {});
+    const normalized = normalizedPlan(data, control.rows[0].data, artists, inventoryEvents);
     const saved = await client.query(`
       UPDATE local_performances
       SET data=$1::jsonb, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 millisecond')
@@ -702,7 +704,7 @@ app.post("/api/local-performances", requireAuth, requireEditor, async (req, res)
       [req.session.user.id, req.session.user.nome, "Alteração", "Controle de Apresentações Locais", cleanText(auditName, 180) || "Planejamento"]
     );
     await client.query("COMMIT");
-    res.json({ ok: true, data: normalized, version: saved.rows[0].version, artists });
+    res.json({ ok: true, data: normalized, version: saved.rows[0].version, artists, inventoryEvents });
   } catch (error) {
     if (client) try { await client.query("ROLLBACK"); } catch (_) {}
     console.error("Erro ao salvar controle de apresentações:", error);
