@@ -18,6 +18,7 @@ const {
   buildReportXlsx,
   normalizeReportPayload
 } = require("./report-exporter");
+const { activeMusicArtists, normalizedPlan } = require("./local-performances");
 let sharp = null;
 try {
   sharp = require("sharp");
@@ -525,6 +526,17 @@ async function initDatabase() {
     )
   `);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS local_performances (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      data JSONB NOT NULL DEFAULT '{"queues":{},"events":[]}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT local_performances_single_row CHECK (id = 1)
+    )
+  `);
+  await pool.query(`
+    INSERT INTO local_performances (id) VALUES (1) ON CONFLICT (id) DO NOTHING
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
@@ -640,6 +652,64 @@ app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
     `, [payload]);
     res.json({ ok: true, version: inserted.rows[0].version });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro ao salvar dados" }); }
+});
+
+// ── Controle interno de apresentações locais ────────────────
+app.get("/api/local-performances", requireAuth, async (req, res) => {
+  try {
+    noStore(res);
+    const versionExpr = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+    const [control, inventory] = await Promise.all([
+      pool.query(`SELECT data, ${versionExpr} AS version FROM local_performances WHERE id=1`),
+      pool.query("SELECT data FROM inventory WHERE id=1")
+    ]);
+    res.json({
+      data: control.rows[0]?.data || { queues: {}, events: [] },
+      version: control.rows[0]?.version || "",
+      artists: activeMusicArtists(inventory.rows[0]?.data || {})
+    });
+  } catch (error) {
+    console.error("Erro ao carregar controle de apresentações:", error);
+    res.status(500).json({ error: "Não foi possível carregar o controle de apresentações." });
+  }
+});
+
+app.post("/api/local-performances", requireAuth, requireEditor, async (req, res) => {
+  let client;
+  try {
+    const { data, baseVersion, auditName } = req.body || {};
+    if (typeof baseVersion !== "string" || !baseVersion) {
+      return res.status(400).json({ error: "Recarregue o controle antes de salvar." });
+    }
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const versionExpr = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+    const control = await client.query(`SELECT data, ${versionExpr} AS version FROM local_performances WHERE id=1 FOR UPDATE`);
+    if (!control.rows.length || control.rows[0].version !== baseVersion) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "O controle foi alterado em outra sessão. Recarregue antes de salvar." });
+    }
+    const inventory = await client.query("SELECT data FROM inventory WHERE id=1");
+    const artists = activeMusicArtists(inventory.rows[0]?.data || {});
+    const normalized = normalizedPlan(data, control.rows[0].data, artists);
+    const saved = await client.query(`
+      UPDATE local_performances
+      SET data=$1::jsonb, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 millisecond')
+      WHERE id=1 RETURNING ${versionExpr} AS version
+    `, [JSON.stringify(normalized)]);
+    await client.query(
+      "INSERT INTO audit_log (user_id, user_name, acao, modulo, nome) VALUES ($1,$2,$3,$4,$5)",
+      [req.session.user.id, req.session.user.nome, "Alteração", "Controle de Apresentações Locais", cleanText(auditName, 180) || "Planejamento"]
+    );
+    await client.query("COMMIT");
+    res.json({ ok: true, data: normalized, version: saved.rows[0].version, artists });
+  } catch (error) {
+    if (client) try { await client.query("ROLLBACK"); } catch (_) {}
+    console.error("Erro ao salvar controle de apresentações:", error);
+    res.status(error.status || 500).json({ error: error.status ? error.message : "Não foi possível salvar o controle de apresentações." });
+  } finally {
+    if (client) client.release();
+  }
 });
 
 app.post("/api/approval/deny", requireAuth, requireEditor, async (req, res) => {

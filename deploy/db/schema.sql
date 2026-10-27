@@ -10,6 +10,15 @@ CREATE TABLE IF NOT EXISTS inventory (
   CONSTRAINT single_row CHECK (id = 1)
 );
 
+-- Planejamento interno de apresentações, separado do inventário público.
+CREATE TABLE IF NOT EXISTS local_performances (
+  id          INTEGER PRIMARY KEY DEFAULT 1,
+  data        JSONB NOT NULL DEFAULT '{"queues":{},"events":[]}'::jsonb,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT local_performances_single_row CHECK (id = 1)
+);
+INSERT INTO local_performances (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
 -- Usuários
 CREATE TABLE IF NOT EXISTS users (
   id            SERIAL PRIMARY KEY,
