@@ -1,0 +1,32 @@
+name: Deploy do Inventário no EasyPanel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-inventario-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Acionar deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Solicitar deploy ao EasyPanel
+        env:
+          DEPLOY_URL: ${{ secrets.EASYPANEL_INVENTARIO_DEPLOY_URL }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "O segredo EASYPANEL_INVENTARIO_DEPLOY_URL não está configurado." >&2
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --max-time 30 \
+            --request POST \
+            "$DEPLOY_URL"
