@@ -642,6 +642,65 @@ app.post("/api/data", requireAuth, requireEditor, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: "Erro ao salvar dados" }); }
 });
 
+app.post("/api/approval/deny", requireAuth, requireEditor, async (req, res) => {
+  let client;
+  try {
+    const { modulo, id, baseVersion } = req.body || {};
+    if (typeof modulo !== "string" || !/^[a-z0-9_]{1,80}$/.test(modulo) ||
+        typeof id !== "string" || !id || id.length > 160 ||
+        typeof baseVersion !== "string" || !baseVersion) {
+      return res.status(400).json({ error: "Dados da solicitação inválidos" });
+    }
+
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const versionExpr = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+    const { rows } = await client.query(`SELECT data, ${versionExpr} AS version FROM inventory WHERE id=1 FOR UPDATE`);
+    if (!rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Cadastro não encontrado" });
+    }
+    if (rows[0].version !== baseVersion) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Os dados foram alterados. Recarregue a página antes de negar o cadastro." });
+    }
+
+    const data = rows[0].data || {};
+    const registros = data[modulo];
+    const index = Array.isArray(registros) ? registros.findIndex(item => item && item.id === id) : -1;
+    if (index < 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Cadastro não encontrado na fila de aprovação" });
+    }
+    const registro = registros[index];
+    if (registro.status !== "Pendente" && registro.status !== "Em revisão") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Apenas cadastros pendentes ou em revisão podem ser negados" });
+    }
+
+    registros.splice(index, 1);
+    const saved = await client.query(`
+      UPDATE inventory
+      SET data = $1::jsonb, updated_at = GREATEST(clock_timestamp(), updated_at + interval '1 millisecond')
+      WHERE id = 1
+      RETURNING ${versionExpr} AS version
+    `, [JSON.stringify(data)]);
+    await client.query(
+      "INSERT INTO audit_log (user_id, user_name, acao, modulo, nome) VALUES ($1,$2,$3,$4,$5)",
+      [req.session.user.id, req.session.user.nome, "Negação", modulo,
+        `${String(registro.nome || "—").slice(0, 180)} [${registro.protocolo || id}]`]
+    );
+    await client.query("COMMIT");
+    res.json({ ok: true, version: saved.rows[0].version });
+  } catch (e) {
+    if (client) try { await client.query("ROLLBACK"); } catch (_) {}
+    console.error("Erro ao negar cadastro:", e);
+    res.status(500).json({ error: "Não foi possível negar o cadastro" });
+  } finally {
+    if (client) client.release();
+  }
+});
+
 app.post("/api/export/:format", requireAuth, async (req, res) => {
   try {
     const format = String(req.params.format || "").toLowerCase();

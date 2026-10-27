@@ -103,6 +103,8 @@
   .rowact{display:flex;gap:6px;justify-content:flex-end}
   .iconbtn{background:#fff;border:1px solid var(--linha);border-radius:7px;padding:5px 8px;font-size:12px}
   .iconbtn:hover{background:var(--azul-claro)}
+  .iconbtn.danger{color:var(--vermelho);border-color:#fecaca}
+  .iconbtn.danger:hover{background:#fef2f2}
   .empty{padding:40px;text-align:center;color:var(--cinza-claro)}
   .modal-bg{position:fixed;inset:0;background:rgba(16,38,73,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:80;overflow-y:auto}
   .modal{background:#fff;border-radius:15px;width:100%;max-width:680px;box-shadow:var(--sombra-md);animation:pop .15s ease}
@@ -800,6 +802,7 @@ function renderAprovacaoCadastros(){
         <td onclick="event.stopPropagation()"><div class="rowact">
           <button class="iconbtn" onclick="openDetail('${r.key}','${r.id}')">Ver</button>
           ${canEdit()?`<button class="iconbtn" onclick="openForm('${r.key}','${r.id}')">Revisar</button>`:""}
+          ${canEdit()?`<button class="iconbtn danger" onclick="denyRecord('${r.key}','${r.id}')">Negar</button>`:""}
         </div></td>
       </tr>`;
     });
@@ -1303,6 +1306,7 @@ function openDetail(key,id){
   });
   modal(`${m.icon} ${_esc(r.nome||"Registro")}`,body,
     `${canEdit()?`<button class="btn-sec btn-sm" onclick="closeModal();openForm('${key}','${id}')">Editar</button>`:""}
+     ${canEdit()&&currentView==="aprovacao"&&(r.status==="Pendente"||r.status==="Em revisão")?`<button class="btn-sec btn-sm" style="color:var(--vermelho);border-color:#fecaca" onclick="denyRecord('${key}','${id}')">Negar cadastro</button>`:""}
      <button class="btn btn-sm" onclick="closeModal()">Fechar</button>`);
 }
 
@@ -1369,6 +1373,43 @@ function delRecord(key,id){if(!canEdit())return;const r=DATA[key].find(x=>x.id==
    `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
     <button class="btn btn-sm" style="background:var(--vermelho)" onclick="confirmDel('${key}','${id}')">Excluir</button>`);}
 async function confirmDel(key,id){const r=(DATA[key]||[]).find(x=>x.id===id);const prev=JSON.parse(JSON.stringify(DATA));DATA[key]=DATA[key].filter(x=>x.id!==id);if(!(await saveData())){DATA=prev;return;}logAudit("Exclusão",MODMAP[key]?MODMAP[key].label:key,r?r.nome:"—");closeModal();buildSidebar();setActive(key);renderModule(key);toast("Registro excluído");}
+
+function denyRecord(key,id){
+  if(!canEdit())return toast("Seu perfil é somente leitura.");
+  const registro=(DATA[key]||[]).find(item=>item.id===id);
+  if(!registro||!["Pendente","Em revisão"].includes(registro.status))return toast("Cadastro não está na fila de aprovação.");
+  modal("Negar cadastro",`<p>Deseja negar o cadastro de <b>${_esc(registro.nome||"(sem nome)")}</b>?</p><p style="margin-top:10px;color:var(--vermelho)">O cadastro será excluído do inventário. Esta ação não pode ser desfeita.</p>`,
+    `<button class="btn-sec btn-sm" onclick="closeModal()">Cancelar</button>
+     <button id="confirmDenyBtn" class="btn btn-sm" style="background:var(--vermelho)" onclick="confirmDeny('${key}','${id}')">Negar e excluir</button>`);
+}
+async function confirmDeny(key,id){
+  const botao=document.getElementById("confirmDenyBtn");
+  if(!botao||botao.disabled)return;
+  botao.disabled=true;botao.textContent="Negando...";
+  try{
+    const res=await fetch("/api/approval/deny",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({modulo:key,id,baseVersion:DATA_VERSION})
+    });
+    const json=await res.json().catch(()=>({}));
+    if(!res.ok){
+      if(res.status===404||res.status===409){
+        closeModal();await loadData();buildSidebar();setActive("aprovacao");renderAprovacaoCadastros();
+      }
+      toast(json.error||"Não foi possível negar o cadastro.");
+      return;
+    }
+    DATA[key]=(DATA[key]||[]).filter(item=>item.id!==id);
+    DATA_VERSION=json.version||DATA_VERSION;
+    closeModal();buildSidebar();setActive("aprovacao");renderAprovacaoCadastros();
+    toast("Cadastro negado e excluído do inventário.");
+  }catch(e){
+    console.error("Erro ao negar cadastro:",e);
+    toast("Não foi possível negar o cadastro. Verifique a conexão e tente novamente.");
+  }finally{
+    if(botao.isConnected){botao.disabled=false;botao.textContent="Negar e excluir";}
+  }
+}
 
 /* ===== Fichas de registro único (Município / Caracterização Turística) ===== */
 const CARACTUR={icon:"🧭",label:"Caracterização do Município em Turismo",sections:[
@@ -1748,7 +1789,7 @@ async function renderAuditLog(){
   let logs=[];
   try{const r=await fetch("/api/audit");if(r.ok)logs=(await r.json()).logs||[];}catch(e){}
   
-  const ACAO_COR={Criação:"ok",Edição:"warn","Criação de usuário":"ok","Edição de usuário":"warn","Exclusão":"err","Exclusão de usuário":"err"};
+  const ACAO_COR={Criação:"ok",Edição:"warn","Criação de usuário":"ok","Edição de usuário":"warn","Exclusão":"err",Negação:"err","Exclusão de usuário":"err"};
   const rows=logs.length?logs.map(l=>{
     const dt=new Date(l.created_at||l.ts);
     const data=dt.toLocaleDateString("pt-BR");
