@@ -85,6 +85,7 @@ function normalizeReportPayload(body) {
   const items = Array.isArray(payload.items) ? payload.items : [];
   return {
     mode: payload.mode === "publico" ? "publico" : "interno",
+    individual: payload.individual === true,
     filtros: payload.filtros && typeof payload.filtros === "object" ? payload.filtros : {},
     items: items.map((item) => ({
       label: text(item.label || "Módulo"),
@@ -621,7 +622,121 @@ function pdfBuffer(doc) {
   });
 }
 
+function individualFieldValue(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value ? "Sim" : "Não";
+  if (Array.isArray(value)) return value.map(individualFieldValue).filter(Boolean).join("; ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return longText(value);
+}
+
+function individualSections(item, record) {
+  const configured = item.sections?.length ? item.sections : [{ t: "Dados do cadastro", f: item.fields || [] }];
+  const seen = new Set(["id"]);
+  const sections = configured.map((section) => {
+    const rows = (Array.isArray(section.f) ? section.f : [])
+      .filter((field) => fieldType(field) !== "photo")
+      .map((field) => {
+        const key = fieldKey(field);
+        seen.add(key);
+        return { label: text(fieldLabel(field)), value: individualFieldValue(record[key]) };
+      })
+      .filter((row) => !empty(row.value));
+    return rows.length ? { title: text(section.t || "Dados do cadastro"), rows } : null;
+  }).filter(Boolean);
+
+  const mediaKeys = new Set(["foto", "fotos", "imagem", "foto_drive_id", "foto_mime", "foto_storage", "foto_view_url", "foto_nome"]);
+  const extraLabels = {
+    protocolo: "Protocolo", origem_cadastro: "Origem do cadastro", data_envio_publico: "Recebido em",
+    responsavel: "Responsável", telefone: "Telefone", resp_telefone: "Telefone do responsável",
+    whatsapp: "WhatsApp", email: "E-mail", publicar_guia: "Publicar no guia",
+    autorizacao_publicacao_guia: "Publicação no guia autorizada", cnpj_cpf: "CNPJ/CPF"
+  };
+  const extras = Object.entries(record).filter(([key]) => !seen.has(key) && !mediaKeys.has(key))
+    .map(([key, value]) => ({
+      label: extraLabels[key] || key.replace(/_/g, " ").replace(/^./, (letter) => letter.toUpperCase()),
+      value: key === "data_envio_publico" && !Number.isNaN(Date.parse(value))
+        ? formatDate(new Date(value)) : individualFieldValue(value)
+    })).filter((row) => !empty(row.value));
+  if (extras.length) sections.push({ title: "Informações complementares", rows: extras });
+  return sections;
+}
+
+async function buildIndividualPdf(payload, options) {
+  const item = payload.items[0];
+  const record = item?.recs?.[0];
+  if (payload.items.length !== 1 || item.recs.length !== 1 || !record || typeof record !== "object") {
+    throw new Error("Selecione um único cadastro para gerar a ficha individual");
+  }
+
+  const moduleName = stripEmoji(item.label || "Inventário");
+  const recordName = text(record.nome || record.local_nome || record.artesao_nome || moduleName);
+  const doc = new PDFDocument({
+    size: "A4", margins: { top: 48, right: 43, bottom: 56, left: 43 }, bufferPages: true,
+    info: { Title: `Ficha individual - ${recordName}`, Author: "Gestão do Turismo de Itatinga" }
+  });
+  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  doc.rect(doc.page.margins.left, 36, width, 4).fill(`#${COLORS.blue}`);
+  pdfText(doc, "PREFEITURA MUNICIPAL DE ITATINGA", { size: 9, bold: true, color: `#${COLORS.muted}`, align: "center" });
+  pdfText(doc, "Inventário Municipal de Turismo", { size: 17, bold: true, color: `#${COLORS.darkBlue}`, align: "center" });
+  pdfText(doc, "FICHA INDIVIDUAL DE CADASTRO", { size: 10, bold: true, color: `#${COLORS.blue}`, align: "center" });
+  doc.moveDown(0.8);
+  pdfText(doc, moduleName, { size: 11, color: `#${COLORS.muted}` });
+  pdfText(doc, recordName, { size: 17, bold: true, color: `#${COLORS.darkBlue}` });
+  pdfText(doc, `Emitido em ${formatDate()}`, { size: 9, color: `#${COLORS.muted}` });
+  doc.moveDown(1.2);
+
+  for (const section of individualSections(item, record)) {
+    ensurePdfSpace(doc, 32);
+    pdfText(doc, stripEmoji(section.title).toUpperCase(), { size: 10, bold: true, color: `#${COLORS.blue}` });
+    doc.moveDown(0.3);
+    for (const row of section.rows) pdfField(doc, row.label, row.value);
+    doc.moveDown(0.8);
+  }
+
+  const photos = collectPhotos(record);
+  if (photos.length) {
+    ensurePdfSpace(doc, 40);
+    pdfText(doc, "FOTOGRAFIA / ARQUIVO ANEXADO", { size: 10, bold: true, color: `#${COLORS.blue}` });
+    doc.moveDown(0.3);
+    for (const photo of photos) {
+      const image = await prepareImage(photo, { title: recordName, raw: record }, options);
+      if (!image.ok) {
+        pdfText(doc, `${photo.label}: arquivo não disponível`, { size: 9.5, color: `#${COLORS.muted}` });
+        continue;
+      }
+      const size = fit(image.width, image.height, width, 280);
+      ensurePdfSpace(doc, size.height + 26);
+      pdfText(doc, photo.label, { size: 9, color: `#${COLORS.muted}` });
+      const x = doc.page.margins.left + (width - size.width) / 2;
+      doc.image(image.buffer, x, doc.y + 4, { width: size.width, height: size.height });
+      doc.y += size.height + 16;
+    }
+  }
+
+  const range = doc.bufferedPageRange();
+  for (let i = 0; i < range.count; i++) {
+    doc.switchToPage(i);
+    if (i > 0) {
+      doc.font("Helvetica").fontSize(8).fillColor(`#${COLORS.muted}`)
+        .text(`Ficha individual · ${moduleName} · ${recordName}`, doc.page.margins.left, 22,
+          { align: "right", width, lineBreak: false });
+    }
+    doc.font("Helvetica").fontSize(8).fillColor(`#${COLORS.muted}`)
+      .text(`Turismo Itatinga · Emitido em ${formatDate()} · Página ${i + 1} de ${range.count}`,
+        doc.page.margins.left, doc.page.height - doc.page.margins.bottom - 14,
+        { align: "center", width, lineBreak: false });
+  }
+
+  return {
+    buffer: await pdfBuffer(doc),
+    filename: `ficha-${slug(moduleName)}-${slug(recordName)}-${new Date().toISOString().slice(0, 10)}.pdf`,
+    contentType: "application/pdf"
+  };
+}
+
 async function buildReportPdf(payload, options = {}) {
+  if (payload.individual) return buildIndividualPdf(payload, options);
   const { categories, total } = collectRows(payload);
   await prepareRecordImages(categories, options);
 

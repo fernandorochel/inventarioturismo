@@ -801,6 +801,7 @@ function renderAprovacaoCadastros(){
         <td>${r.foto?"Com foto":"Sem foto"}</td>
         <td onclick="event.stopPropagation()"><div class="rowact">
           <button class="iconbtn" onclick="openDetail('${r.key}','${r.id}')">Ver</button>
+          <button class="iconbtn" title="Baixar ficha individual em PDF" aria-label="Baixar ficha individual em PDF" onclick="gerarFichaPdf('${r.key}','${r.id}')">📄 PDF</button>
           ${canEdit()?`<button class="iconbtn" onclick="openForm('${r.key}','${r.id}')">Revisar</button>`:""}
           ${canEdit()?`<button class="iconbtn danger" onclick="denyRecord('${r.key}','${r.id}')">Negar</button>`:""}
         </div></td>
@@ -1277,6 +1278,7 @@ function renderModule(key){
     rows.forEach(r=>{h+=`<tr class="row" onclick="openDetail('${key}','${r.id}')">${cols.map((c,i)=>`<td>${i===0?'<b>'+cellValue(m,r,c)+'</b>':cellValue(m,r,c)}</td>`).join("")}
       <td onclick="event.stopPropagation()"><div class="rowact">
         <button class="iconbtn" onclick="openDetail('${key}','${r.id}')">Ver</button>
+        <button class="iconbtn" title="Baixar ficha individual em PDF" aria-label="Baixar ficha individual em PDF" onclick="gerarFichaPdf('${key}','${r.id}')">📄 PDF</button>
         ${canEdit()?`<button class="iconbtn" onclick="openForm('${key}','${r.id}')">Editar</button>`:""}
         ${canEdit()?`<button class="iconbtn" onclick="delRecord('${key}','${r.id}')">Excluir</button>`:""}</div></td></tr>`;});
     h+=`</tbody></table></div>`;
@@ -1305,7 +1307,8 @@ function openDetail(key,id){
     });
   });
   modal(`${m.icon} ${_esc(r.nome||"Registro")}`,body,
-    `${canEdit()?`<button class="btn-sec btn-sm" onclick="closeModal();openForm('${key}','${id}')">Editar</button>`:""}
+    `<button class="btn-sec btn-sm" onclick="gerarFichaPdf('${key}','${id}')">📄 Imprimir PDF</button>
+     ${canEdit()?`<button class="btn-sec btn-sm" onclick="closeModal();openForm('${key}','${id}')">Editar</button>`:""}
      ${canEdit()&&currentView==="aprovacao"&&(r.status==="Pendente"||r.status==="Em revisão")?`<button class="btn-sec btn-sm" style="color:var(--vermelho);border-color:#fecaca" onclick="denyRecord('${key}','${id}')">Negar cadastro</button>`:""}
      <button class="btn btn-sm" onclick="closeModal()">Fechar</button>`);
 }
@@ -1628,7 +1631,7 @@ function _nomeArquivoResposta(res,fmt){
   const m=cd.match(/filename="?([^"]+)"?/i);
   return m?m[1]:_arquivoExportPadrao(fmt);
 }
-async function exportarServidor(fmt,items,filtros){
+async function exportarServidor(fmt,items,filtros,opcoes={}){
   const {total}=_coletarRel(items,filtros);
   if(!total)return toast("Nenhum registro para exportar.");
   const labels={pdf:"PDF",docx:"Word",xlsx:"Excel"};
@@ -1639,7 +1642,7 @@ async function exportarServidor(fmt,items,filtros){
     const res=await fetch(`/api/export/${fmt}`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({items,filtros,mode:_modoExport()})
+      body:JSON.stringify({items,filtros,mode:opcoes.individual?"interno":_modoExport(),...opcoes})
     });
     if(!res.ok){
       const err=await res.json().catch(()=>({}));
@@ -1710,6 +1713,13 @@ async function gerarRelatorioModulo(key,fmt){const m=MODMAP[key];if(!m)return to
   await loadData();
   const f=filterState[key]||{};const filtros={q:f.q||"",st:f.st||"",cat:f.cat||""};
   (fmt==="word"?exportarWord:fmt==="xlsx"?exportarExcel:exportarPDF)([_itemDeModulo(m)],filtros);}
+async function gerarFichaPdf(key,id){
+  const m=MODMAP[key];if(!m)return toast("Módulo não encontrado.");
+  await loadData();
+  const registro=(DATA[key]||[]).find(r=>r.id===id);
+  if(!registro)return toast("Cadastro não encontrado. Atualize a página.");
+  await exportarServidor("pdf",[{..._itemDeModulo(m),recs:[registro]}],{}, {individual:true});
+}
 async function renderUsers(){
   await loadUsers();
   const rows=USERS.map((u,i)=>`
