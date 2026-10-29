@@ -19,6 +19,7 @@ const {
   normalizeReportPayload
 } = require("./report-exporter");
 const { activeMusicArtists, inventoryTourismEvents, normalizedPlan } = require("./local-performances");
+const { contactGroups, buildWhatsAppWorkbook } = require("./whatsapp-contacts");
 let sharp = null;
 try {
   sharp = require("sharp");
@@ -487,6 +488,21 @@ const PUBLIC_CADASTRO_MODULES = Object.freeze({
   pracas: "Praças"
 });
 
+const WHATSAPP_EXPORT_MODULES = Object.freeze({
+  ...PUBLIC_CADASTRO_MODULES,
+  feiras_mercados: "Feiras/Mercados Culturais",
+  arq_civil: "Arquitetura Civil",
+  arq_oficial: "Arquitetura Oficial",
+  arq_industrial: "Arquitetura Industrial/Agrícola",
+  arq_funeraria: "Arquitetura Funerária",
+  obras_infra: "Obras de Infraestrutura",
+  lugares_memoria: "Lugares de Memória",
+  transp_fretamento: "Empresas de Fretamento",
+  cursos_capacitacao: "Cursos e Capacitações",
+  sinalizacao_tur: "Sinalização Turística",
+  horarios_onibus: "Horários de Ônibus"
+});
+
 function cleanText(value, maxLength = 500) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
@@ -770,6 +786,27 @@ app.post("/api/approval/deny", requireAuth, requireEditor, async (req, res) => {
     res.status(500).json({ error: "Não foi possível negar o cadastro" });
   } finally {
     if (client) client.release();
+  }
+});
+
+app.get("/api/export/whatsapp", requireAuth, async (req, res) => {
+  try {
+    const segment = String(req.query.segment || "");
+    if (segment && !Object.prototype.hasOwnProperty.call(WHATSAPP_EXPORT_MODULES, segment)) {
+      return res.status(400).json({ error: "Segmento inválido." });
+    }
+    noStore(res);
+    const { rows } = await pool.query("SELECT data FROM inventory WHERE id=1");
+    const modules = Object.entries(WHATSAPP_EXPORT_MODULES).map(([key, label]) => ({ key, label }));
+    const groups = contactGroups(rows[0]?.data || {}, modules, { segment });
+    if (!groups.length) return res.status(404).json({ error: "Nenhum contato de WhatsApp foi encontrado para o segmento selecionado." });
+    const result = await buildWhatsAppWorkbook(groups, segment);
+    res.set("Content-Type", result.contentType);
+    res.set("Content-Disposition", `attachment; filename="${result.filename}"`);
+    res.send(Buffer.from(result.buffer));
+  } catch (error) {
+    console.error("Erro ao exportar contatos de WhatsApp:", error);
+    res.status(500).json({ error: "Não foi possível gerar a lista de WhatsApp." });
   }
 });
 

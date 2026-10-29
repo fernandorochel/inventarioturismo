@@ -1514,6 +1514,7 @@ async function saveSingle(view){
 /* ===== exportar ===== */
 function renderExport(){const total=totalRecords();
   const stOpts=STATUS.map(x=>`<option>${x}</option>`).join("");
+  const waSegments=MODULES.filter(m=>!["demanda_turistica","atas_comtur","festa_trabalhador"].includes(m.key));
   const extras=[{key:"_municipio",icon:"🏛️",label:"Identificação do Município",n:(DATA._municipio&&DATA._municipio.nome?1:0)}];
   let h=`<div class="crumb">Sistema › Relatórios e Exportação</div>
   <div class="page-head"><div><h2>📤 Relatórios e Exportação</h2><p>Exporte o inventário em PDF, Word ou Excel (${total} registros)</p></div></div>
@@ -1523,6 +1524,17 @@ function renderExport(){const total=totalRecords();
     <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorioWord()"><div class="ic">📝</div><div class="v" style="font-size:15px">Word (.docx)</div><div class="l">Word real ✓</div></div>
     <div class="stat" style="cursor:pointer;border-color:var(--azul-med)" onclick="gerarRelatorioExcel()"><div class="ic">📊</div><div class="v" style="font-size:15px">Excel (.xlsx)</div><div class="l">Dados tabulados ✓</div></div>
     <div class="stat" style="cursor:pointer;border-color:#16a34a" onclick="gerarListaResponsaveis()"><div class="ic">👤</div><div class="v" style="font-size:13px">Responsáveis</div><div class="l">Lista de contatos ↓</div></div>
+  </div>
+  <div class="panel" style="margin-bottom:18px">
+    <h3>📱 Contatos de WhatsApp por segmento</h3>
+    <p style="font-size:12.5px;color:var(--cinza);margin:7px 0 14px">Planilha simples com estabelecimento, responsável, WhatsApp do estabelecimento e telefone/WhatsApp do responsável. Cada segmento sai em uma aba separada.</p>
+    <div class="toolbar" style="align-items:end">
+      <label for="waSegment" style="font-size:12px;font-weight:700;color:var(--cinza)">Segmento
+        <select id="waSegment" style="display:block;margin-top:5px;min-width:280px"><option value="">Todos os segmentos</option>${waSegments.map(m=>`<option value="${_esc(m.key)}">${_esc(m.label)}</option>`).join("")}</select>
+      </label>
+      <button class="btn btn-sm" onclick="gerarListaWhatsApp()">📱 Baixar lista Excel</button>
+    </div>
+    <p style="font-size:11.5px;color:var(--cinza-claro);margin:9px 0 0">Inclui cadastros em qualquer situação. O contato do responsável reproduz o campo “Telefone / WhatsApp” da ficha; números sem indicação de WhatsApp não preenchem o contato do estabelecimento.</p>
   </div>
   <div class="panel"><h3>Filtros de seleção</h3>
     <div class="toolbar">
@@ -1635,6 +1647,23 @@ function _nomeArquivoResposta(res,fmt){
   const cd=res.headers.get("Content-Disposition")||res.headers.get("content-disposition")||"";
   const m=cd.match(/filename="?([^"]+)"?/i);
   return m?m[1]:_arquivoExportPadrao(fmt);
+}
+async function gerarListaWhatsApp(){
+  const segment=document.getElementById("waSegment")?.value||"";
+  const url="/api/export/whatsapp"+(segment?"?segment="+encodeURIComponent(segment):"");
+  try{
+    toast("Preparando lista de WhatsApp...");
+    const res=await fetch(url,{cache:"no-store"});
+    if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||"Não foi possível gerar a lista.");}
+    const blob=await res.blob();
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download=_nomeArquivoResposta(res,"xlsx");
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(()=>{URL.revokeObjectURL(link.href);link.remove();},1800);
+    toast("Lista de WhatsApp pronta para download.");
+  }catch(error){toast(error.message||"Erro ao exportar WhatsApp.");}
 }
 async function exportarServidor(fmt,items,filtros,opcoes={}){
   const {total}=_coletarRel(items,filtros);
