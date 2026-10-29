@@ -1527,12 +1527,12 @@ function renderExport(){const total=totalRecords();
   </div>
   <div class="panel" style="margin-bottom:18px">
     <h3>📱 Contatos de WhatsApp por segmento</h3>
-    <p style="font-size:12.5px;color:var(--cinza);margin:7px 0 14px">Planilha simples com estabelecimento, responsável, WhatsApp do estabelecimento e telefone/WhatsApp do responsável. Cada segmento sai em uma aba separada.</p>
+    <p style="font-size:12.5px;color:var(--cinza);margin:7px 0 14px">PDF com estabelecimento, responsável, WhatsApp do estabelecimento e telefone/WhatsApp do responsável. Os segmentos aparecem um abaixo do outro.</p>
     <div class="toolbar" style="align-items:end">
       <label for="waSegment" style="font-size:12px;font-weight:700;color:var(--cinza)">Segmento
         <select id="waSegment" style="display:block;margin-top:5px;min-width:280px"><option value="">Todos os segmentos</option>${waSegments.map(m=>`<option value="${_esc(m.key)}">${_esc(m.label)}</option>`).join("")}</select>
       </label>
-      <button class="btn btn-sm" onclick="gerarListaWhatsApp()">📱 Baixar lista Excel</button>
+      <button class="btn btn-sm" onclick="gerarListaWhatsApp()">📄 Baixar lista PDF</button>
     </div>
     <p style="font-size:11.5px;color:var(--cinza-claro);margin:9px 0 0">Inclui cadastros em qualquer situação. O contato do responsável reproduz o campo “Telefone / WhatsApp” da ficha; números sem indicação de WhatsApp não preenchem o contato do estabelecimento.</p>
   </div>
@@ -1658,11 +1658,11 @@ async function gerarListaWhatsApp(){
     const blob=await res.blob();
     const link=document.createElement("a");
     link.href=URL.createObjectURL(blob);
-    link.download=_nomeArquivoResposta(res,"xlsx");
+    link.download=_nomeArquivoResposta(res,"pdf");
     document.body.appendChild(link);
     link.click();
     setTimeout(()=>{URL.revokeObjectURL(link.href);link.remove();},1800);
-    toast("Lista de WhatsApp pronta para download.");
+    toast("PDF de WhatsApp pronto para download.");
   }catch(error){toast(error.message||"Erro ao exportar WhatsApp.");}
 }
 async function exportarServidor(fmt,items,filtros,opcoes={}){

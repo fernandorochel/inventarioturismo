@@ -19,7 +19,7 @@ const {
   normalizeReportPayload
 } = require("./report-exporter");
 const { activeMusicArtists, inventoryTourismEvents, normalizedPlan } = require("./local-performances");
-const { contactGroups, buildWhatsAppWorkbook } = require("./whatsapp-contacts");
+const { contactGroups, buildWhatsAppPdf } = require("./whatsapp-contacts");
 let sharp = null;
 try {
   sharp = require("sharp");
@@ -800,7 +800,7 @@ app.get("/api/export/whatsapp", requireAuth, async (req, res) => {
     const modules = Object.entries(WHATSAPP_EXPORT_MODULES).map(([key, label]) => ({ key, label }));
     const groups = contactGroups(rows[0]?.data || {}, modules, { segment });
     if (!groups.length) return res.status(404).json({ error: "Nenhum contato de WhatsApp foi encontrado para o segmento selecionado." });
-    const result = await buildWhatsAppWorkbook(groups, segment);
+    const result = await buildWhatsAppPdf(groups, segment);
     res.set("Content-Type", result.contentType);
     res.set("Content-Disposition", `attachment; filename="${result.filename}"`);
     res.send(Buffer.from(result.buffer));
